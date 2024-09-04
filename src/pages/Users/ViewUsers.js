@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import { fetchUsers } from '../../services/usersService';
 import { useNavigate } from 'react-router-dom';
+import { customStyles } from '../../assets/table-styles';
 
 const ViewUsers = () => {
   const [users, setUsers] = useState([]);
@@ -27,7 +28,10 @@ const ViewUsers = () => {
         searchKey,
         orderBy: sortField,
         orderDirection: sortDirection.toUpperCase(),
-        searchField: ['firstname','lastname','username','phoneNumber']
+        searchField: ['firstname','lastname','username','phoneNumber'],
+        filters:{
+          role: 'agent',
+        }
       });
       setUsers(data.data);
       setTotalRows(data.total);
@@ -93,6 +97,7 @@ const ViewUsers = () => {
         onSort={handleSort}
         highlightOnHover
         pointerOnHover
+        customStyles={customStyles}
       />
     </div>
   );

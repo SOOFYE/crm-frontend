@@ -10,7 +10,7 @@ const Sidebar = () => {
   const adminItems = [
     { name: 'Users', path: '/admin/view-users' },
     { name: 'Campaign Data', path: '/admin/upload-data' },
-    { name: 'Create Campaigns', path: '/admin/reports' },
+    { name: 'Create Campaigns', path: '/admin/view-campaign' },
   ];
 
   const agentItems = [

@@ -12,3 +12,113 @@ code {
   font-family: source-code-pro, Menlo, Monaco, Consolas, 'Courier New',
     monospace;
 }
+
+/* Set the width and height of the DataTable container */
+.data-table-container {
+  font-size: 14px;
+  height: auto; /* Adjusts the height to accommodate content */
+  max-height: 100vh; /* Ensures the table doesn't overflow the viewport height */
+  overflow-y: auto; /* Adds vertical scrolling if needed */
+}
+
+/* Ensure that the headers and cells do not truncate the text */
+.data-table-container .rdt_TableHead .rdt_TableCol, 
+.data-table-container .rdt_TableBody .rdt_TableCell {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Add some padding to the table cells for better spacing */
+.data-table-container .rdt_TableCol, 
+.data-table-container .rdt_TableCell {
+  padding: 10px;
+}
+
+/* Ensure that the actions column is always visible */
+.data-table-container .rdt_TableCell.actions-column {
+  min-width: 100px;
+  text-align: center;
+}
+
+/* Hover effect for the clickable cells */
+.data-table-container .rdt_TableCell span.text-blue-500 {
+  color: #1d4ed8; /* Tailwind's blue-500 color */
+  cursor: pointer;
+  text-decoration: underline;
+}
+
+.data-table-container .rdt_TableCell span.text-blue-500:hover {
+  color: #1e40af; /* Tailwind's blue-700 color */
+}
+
+/* Making sure that the pills in the status column have proper spacing */
+.data-table-container .chip {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 8px;
+  text-align: center;
+  min-width: 60px;
+}
+
+/* Define color styles for different statuses */
+.data-table-container .chip.success {
+  background-color: #10b981; /* Tailwind's green-500 color */
+  color: white;
+}
+
+.data-table-container .chip.danger {
+  background-color: #ef4444; /* Tailwind's red-500 color */
+  color: white;
+}
+
+.data-table-container .chip.default {
+  background-color: #f3f4f6; /* Tailwind's gray-200 color */
+  color: #6b7280; /* Tailwind's gray-500 color */
+}
+
+/* Dropdown styles */
+.dropdown-container {
+  position: relative;
+}
+
+.dropdown-button {
+  background-color: #ffffff;
+  border: 1px solid #e5e7eb; /* Tailwind's gray-300 color */
+  padding: 8px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dropdown-button:focus {
+  outline: none;
+  border-color: #3b82f6; /* Tailwind's blue-500 color */
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 10;
+  background-color: white;
+  border: 1px solid #e5e7eb; /* Tailwind's gray-300 color */
+  border-radius: 4px;
+  box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+  max-height: 200px; /* Limit height of dropdown */
+  overflow-y: auto; /* Add scroll if dropdown is too long */
+  padding: 8px 0;
+}
+
+.dropdown-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  white-space: nowrap; /* Prevent text wrapping */
+}
+
+.dropdown-item:hover {
+  background-color: #f3f4f6; /* Tailwind's gray-100 color */
+}

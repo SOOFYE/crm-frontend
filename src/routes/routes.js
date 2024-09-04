@@ -5,6 +5,9 @@ import Layout from '../components/Layout';
 import ViewUsers from '../pages/Users/ViewUsers';
 import UploadData from '../pages/Upload-Data/UploadData';
 import UploadForm from '../pages/Upload-Data/UploadForm';
+import ViewCampaign from '../pages/Campaign/ViewCampaign';
+import CreateCampaign from '../pages/Campaign/CreateCampaign';
+import ViewSingleCampaign from '../pages/Campaign/ViewSingleCampaign';
 
 function App() {
   return (
@@ -22,6 +25,9 @@ function App() {
           <Route path="admin/view-users" element={<ViewUsers />} />
           <Route path="admin/upload-data" element={<UploadData />} />
           <Route path="admin/upload-form" element={<UploadForm />} />
+          <Route path="admin/view-campaign" element={<ViewCampaign/>}/>
+          <Route path="admin/create-campaign" element={<CreateCampaign/>}/>
+          <Route path="admin/view-single-campaign/:campaignId" element={<ViewSingleCampaign/>}/>
           {/* Other protected routes */}
         </Route>
 

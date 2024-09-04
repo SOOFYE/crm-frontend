@@ -21,7 +21,6 @@ const LoginPage = () => {
       const token = response.data.accessToken;
       const fullName = response.data.user.firstName + response.data.user.lastName
       const role = response.data.user.role
-      
 
       // Set the token in cookies
       setCookie('token', token, { path: '/' });
@@ -41,13 +40,13 @@ const LoginPage = () => {
         transition: Bounce,
         });
 
-        const defaultRoute = role === 'admin' ? '/admin/dashboard' : '/agent/leads';
+        const defaultRoute = role === 'admin' ? '/admin/view-campaign' : '/agent/leads';
         navigate(defaultRoute);
      
       console.log(`Logged in as ${fullName} with roles: ${role}`);
     } catch (error) {
       console.error('Login failed:', error);
-      toast.error(error.response.data.message, {
+      toast.error(error.response?.data?.message || "Server Error", {
         position: "top-right",
         autoClose: 5000,
         hideProgressBar: false,
@@ -57,7 +56,7 @@ const LoginPage = () => {
         progress: undefined,
         theme: "light",
         transition: Bounce,
-        });
+    });
     }
   };
 
