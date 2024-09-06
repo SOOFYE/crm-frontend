@@ -2,9 +2,12 @@ import React, { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
-import { customStyles } from '../../assets/table-styles';
+import { TABLEcustomStyles } from '../../styles/table-styles';
 import DropDown from '../../components/DropDownComp';
-import { fetchCampaigns } from '../../services/campaignService';
+import { fetchCampaigns, deleteCampaign } from '../../services/campaignService';
+import Modal from 'react-modal';
+import { MODALcustomStyles } from '../../styles/react-modal-styles';
+import { toast, Bounce } from 'react-toastify';
 
 const ViewCampaign = () => {
     const [data, setData] = useState([]);
@@ -15,6 +18,8 @@ const ViewCampaign = () => {
     const [perPage, setPerPage] = useState(10);
     const [sortField, setSortField] = useState('createdAt');
     const [sortDirection, setSortDirection] = useState('desc');
+    const [showModal, setShowModal] = useState(false); // State for modal visibility
+    const [selectedCampaign, setSelectedCampaign] = useState(null); // State to track the selected campaign
     const navigate = useNavigate();
 
     useEffect(() => {
@@ -24,11 +29,11 @@ const ViewCampaign = () => {
     const loadCampaigns = async () => {
         setLoading(true);
         try {
-            const data = await fetchCampaigns({  // Implement this service function to fetch campaigns
+            const data = await fetchCampaigns({
                 page,
                 limit: perPage,
-                // searchKey,
-                // searchField:['name'],
+                searchKey,
+                searchField:['name'],
                 orderBy: sortField || 'createdAt',
                 orderDirection: sortDirection.toUpperCase(),
             });
@@ -55,29 +60,59 @@ const ViewCampaign = () => {
     };
 
     const handleView = (row) => {
-        // Logic to view campaign details
-        navigate(`/admin/view-single-campaign/${row.id}`)
+        navigate(`/admin/view-single-campaign/${row.id}`);
     };
 
-    const handleDownloadData = (row) => {
-        // Logic to download campaign data
-        console.log('Downloading data for campaign', row.name);
+    const handleEdit = (row) => {
+        navigate(`/admin/edit-campaign/${row.id}`);
     };
 
-    const handleViewData = (row) => {
-        // Logic to view campaign data
-        console.log('Viewing data for campaign', row.name);
-    };
+    // const handleViewData = (row) => {
+    //     console.log('Viewing data for campaign', row.name);
+    // };
 
     const handleDelete = (row) => {
-        // Logic to delete campaign
-        console.log('Deleting campaign', row.name);
+        setSelectedCampaign(row); // Set the campaign to be deleted
+        setShowModal(true); // Show the confirmation modal
+    };
+
+    const confirmDelete = async () => {
+        try {
+            await deleteCampaign(selectedCampaign.id); // Implement the delete service
+            setShowModal(false); // Close the modal
+            setSelectedCampaign(null); // Clear selected campaign
+            toast.success('Campaign deleted successfully', {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+              });
+            loadCampaigns(); // Reload campaigns
+        } catch (error) {
+            toast.error('Error deleting campaign', {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+              });
+            console.error('Error deleting campaign:', error);
+        }
     };
 
     const dropdownOptions = [
         { label: 'View', onClick: handleView },
-        { label: 'Download Data', onClick: handleDownloadData },
-        { label: 'View Data', onClick: handleViewData },
+        { label: 'Edit', onClick: handleEdit },
+        // { label: 'View Data', onClick: handleViewData },
         { label: 'Delete', onClick: handleDelete },
     ];
 
@@ -114,27 +149,55 @@ const ViewCampaign = () => {
                     className="border border-gray-300 p-2 rounded w-1/2"
                 />
                 <button
-                    onClick={() => navigate('/admin/create-campaign')}  // Adjust the path as needed
+                    onClick={() => navigate('/admin/create-campaign')}
                     className="bg-blue-500 text-white p-2 rounded"
                 >
                     Create Campaign
                 </button>
             </div>
-            <DataTable
-                columns={columns}
-                data={data}
-                progressPending={loading}
-                pagination
-                paginationServer
-                paginationTotalRows={totalRows}
-                onChangePage={handlePageChange}
-                onChangeRowsPerPage={handlePerRowsChange}
-                sortServer
-                onSort={handleSort}
-                highlightOnHover
-                pointerOnHover
-                customStyles={customStyles}
-            />
+            <div className="overflow-x-auto">
+                <DataTable
+                    columns={columns}
+                    data={data}
+                    progressPending={loading}
+                    pagination
+                    paginationServer
+                    paginationTotalRows={totalRows}
+                    onChangePage={handlePageChange}
+                    onChangeRowsPerPage={handlePerRowsChange}
+                    sortServer
+                    onSort={handleSort}
+                    highlightOnHover
+                    pointerOnHover
+                    customStyles={TABLEcustomStyles}
+                />
+            </div>
+
+            {/* Confirmation Modal */}
+            <Modal
+                isOpen={showModal}
+                onRequestClose={() => setShowModal(false)}
+                contentLabel="Confirm Deletion"
+                ariaHideApp={false}
+                style={MODALcustomStyles}
+            >
+                <h2 className="text-xl font-bold">Confirm Deletion</h2>
+                <p>Are you sure you want to delete the campaign <strong>{selectedCampaign?.name}</strong>?</p>
+                <div className="flex justify-end mt-4">
+                    <button
+                        onClick={() => setShowModal(false)}
+                        className="bg-gray-300 text-black px-4 py-2 mr-2 rounded"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        onClick={confirmDelete}
+                        className="bg-red-500 text-white px-4 py-2 rounded"
+                    >
+                        Delete
+                    </button>
+                </div>
+            </Modal>
         </div>
     );
 };

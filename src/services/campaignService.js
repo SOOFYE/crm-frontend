@@ -118,3 +118,68 @@ export const fetchSingleCampaign = async (campaignId) => {
 
   return response.data;
 };
+
+
+
+export const downloadFilteredData = async (campaignId) => {
+  const token = getCookie('token');
+  const headers = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  const API_URL = `${process.env.REACT_APP_BACKEND_URL}campaigns/${campaignId}/filtered-data/export-csv`;
+
+  // Fetch the CSV file as a blob
+  const response = await axios.get(API_URL, {
+    headers,
+    responseType: 'blob', // important to handle binary data (CSV)
+  });
+
+  return response.data; // Return the blob data
+};
+
+
+export const updateCampaign = async (campaignId,formData) => {
+    
+  const token = getCookie('token');
+
+  const API_URL = process.env.REACT_APP_BACKEND_URL + `campaigns/${campaignId}`;
+ 
+  const headers = {
+      'Content-Type': 'multipart/form-data',
+  };
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  // Make the request with the Authorization header
+  const response = await axios.patch(API_URL, formData, {
+    headers,
+  });
+
+  return response.data;
+};
+
+
+export const deleteCampaign = async (campaignId) => {
+
+  const token = getCookie('token');
+
+  const headers = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+
+  const API_URL = process.env.REACT_APP_BACKEND_URL + `campaigns/${campaignId}`;
+
+  const response = await axios.delete(API_URL, {
+    headers
+  });
+
+  return response.data;
+};

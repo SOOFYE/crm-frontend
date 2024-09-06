@@ -5,10 +5,13 @@ import { fetchCampaignDataInfo } from '../../services/dataService';
 import { getSignedUrl } from '../../services/signedUrlService';
 import moment from 'moment';  // Import moment for date formatting
 import Chip from '../../components/Chip';
-import { customStyles } from '../../assets/table-styles';
+import { TABLEcustomStyles } from '../../styles/table-styles';
 import CampaignLinkModal from '../../components/Upload-Data/CampaingLinkModal';
 import { fetchCampaignIDList } from '../../services/campaignService';
 import DropDown from '../../components/DropDownComp';
+import { linkCampaign, unLinkCampaign, deleteOriginalData } from '../../services/dataService';
+
+import { toast, Bounce } from 'react-toastify';
 
 
 const UploadData = () => {
@@ -34,7 +37,7 @@ const UploadData = () => {
       try{
 
         const data = await fetchCampaignIDList()
-        console.log(data)
+        setCampaigns(data)
 
       }catch(error){
 
@@ -80,22 +83,74 @@ const UploadData = () => {
       setModalOpen(true);
   };
 
-  const handleUnlinkCampaign = (row) => {
-      // Your logic to unlink the campaign
+  const handleUnlinkCampaign = async (row) => {
+    try{
+      await unLinkCampaign(row.preprocessedData.id)
+      toast.success("Data unlinked from campaign", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
+    }catch(error){
+      toast.error(error.response.data.error || 'Failed to unlink campaign.', {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
+      loadCampaignData()
+    }
       console.log('Unlinking campaign for', row.name);
   };
 
   const handleSubmitCampaignLink = async (selectedCampaign) => {
-      // Your logic to link the campaign with the selected row
+      try{
       console.log('Linking campaign', selectedCampaign, 'to', selectedRow.name);
-      // Call API to link campaign
+      await linkCampaign(selectedRow.preprocessedData.id,selectedCampaign.id)
+      toast.success("Data linked to campaign", {
+        position: "top-right",
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: "light",
+        transition: Bounce,
+      });
       loadCampaignData(); // Refresh data
+      }catch(error){
+        toast.error(error.response.data.error || 'Failed to link campaign.', {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+          theme: "light",
+          transition: Bounce,
+        });
+      }
   };
 
-  const handleDelete = async (selectedCampaign) => {
-    // Your logic to link the campaign with the selected row
-    console.log('Linking campaign', selectedCampaign, 'to', selectedRow.name);
-    // Call API to link campaign
+  const handleDelete = async (row) => {
+    try{
+    await deleteOriginalData(row.id)
+    }catch(error){
+      console.log(error)
+    }
 };
 
 
@@ -133,7 +188,7 @@ const UploadData = () => {
 
 
       const dropdownOptions = [
-        { label: 'Delete', onClick: handleDelete },
+        { label: 'Delete', onClick: handleDelete() },
     ];
   
     const columns = [
@@ -218,15 +273,23 @@ const UploadData = () => {
         cell: row => (
             <DropDown
                 options={
-                    row?.preprocessedData?.campaign
-                        ? [
-                            { label: 'Unlink from Campaign', onClick: () => handleUnlinkCampaign(row) },
-                            { label: 'Delete', onClick: () => handleDelete(row) },
-                        ]
-                        : [
-                            { label: 'Link to Campaign', onClick: () => handleLinkToCampaign(row) },
-                            { label: 'Delete', onClick: () => handleDelete(row) },
-                        ]
+
+                  !row?.preprocessedData?.campaign && row?.preprocessedData?.status == 'success'
+                  ?
+                  [
+                    { label: 'Link to Campaign', onClick: () => handleLinkToCampaign(row) },
+                    { label: 'Delete', onClick: () => handleDelete(row) }
+                  ] :
+                  row?.preprocessedData?.campaign && row?.preprocessedData?.status === 'success'
+                  ?
+                  [
+                    { label: 'Unlink from Campaign', onClick: () => handleUnlinkCampaign(row) },
+                    { label: 'Delete', onClick: () => handleDelete(row) }
+                  ] :
+                  
+                  [
+                    { label: 'Delete', onClick: () => handleDelete(row) }
+                  ]
                 }
                 row={row}
             />
@@ -235,6 +298,8 @@ const UploadData = () => {
 
     },
     ];
+
+ 
   
     return (
       <div className="p-8">
@@ -254,7 +319,7 @@ const UploadData = () => {
             Upload Data
           </button>
         </div>
-        
+        <div className="overflow-x-auto">
         <DataTable
           columns={columns}
           data={data}
@@ -268,8 +333,9 @@ const UploadData = () => {
           onSort={handleSort}
           highlightOnHover
           pointerOnHover
-          customStyles={customStyles}
+          customStyles={TABLEcustomStyles}
         />
+        </div>
 
 <CampaignLinkModal
                 isOpen={modalOpen}

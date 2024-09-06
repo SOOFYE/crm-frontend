@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import { fetchUsers } from '../../services/usersService';
 import { useNavigate } from 'react-router-dom';
-import { customStyles } from '../../assets/table-styles';
+import { TABLEcustomStyles } from '../../styles/table-styles';
 
 const ViewUsers = () => {
   const [users, setUsers] = useState([]);
@@ -84,6 +84,7 @@ const ViewUsers = () => {
           Add Agents
         </button>
       </div>
+      <div className="overflow-x-auto">
       <DataTable
         columns={columns}
         data={users}
@@ -97,8 +98,9 @@ const ViewUsers = () => {
         onSort={handleSort}
         highlightOnHover
         pointerOnHover
-        customStyles={customStyles}
+        customStyles={TABLEcustomStyles}
       />
+      </div>
     </div>
   );
 };

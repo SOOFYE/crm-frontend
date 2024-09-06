@@ -8,6 +8,7 @@ import UploadForm from '../pages/Upload-Data/UploadForm';
 import ViewCampaign from '../pages/Campaign/ViewCampaign';
 import CreateCampaign from '../pages/Campaign/CreateCampaign';
 import ViewSingleCampaign from '../pages/Campaign/ViewSingleCampaign';
+import UpdateCampaign from '../pages/Campaign/UpdateCampaign';
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="admin/view-campaign" element={<ViewCampaign/>}/>
           <Route path="admin/create-campaign" element={<CreateCampaign/>}/>
           <Route path="admin/view-single-campaign/:campaignId" element={<ViewSingleCampaign/>}/>
+          <Route path="admin/edit-campaign/:campaignId" element={<UpdateCampaign/>}/>
           {/* Other protected routes */}
         </Route>
 
