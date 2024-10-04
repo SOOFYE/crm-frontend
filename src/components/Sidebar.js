@@ -10,16 +10,19 @@ const Sidebar = () => {
 
   // Admin menu items
   const adminItems = [
+    { name: 'Dashboard ', path: '/admin/view-users' },
     { name: 'User', path: '/admin/view-users' },
     { name: 'Data Management', path: '/admin/upload-data' },
+    { name: 'Campaign Type', path: '/admin/view-campaign' },
     { name: 'Campaign', path: '/admin/view-campaign' },
   ];
 
   // Agent menu items
   const agentItems = [
-    { name: 'Leads', path: '/agent/leads' },
-    { name: 'Follow-ups', path: '/agent/follow-ups' },
-    { name: 'Profile', path: '/agent/profile' },
+    { name: 'Dashboard ', path: '/admin/view-users' },
+    { name: 'Customer Interactions', path: '/agent/leads' },
+    { name: 'Leads', path: '/agent/follow-ups' },
+    { name: 'Customer Follow-up', path: '/agent/profile' },
   ];
 
   // Use admin or agent items based on the role

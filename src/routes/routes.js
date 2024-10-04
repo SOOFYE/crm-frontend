@@ -9,6 +9,8 @@ import ViewCampaign from '../pages/Campaign/ViewCampaign';
 import CreateCampaign from '../pages/Campaign/CreateCampaign';
 import ViewSingleCampaign from '../pages/Campaign/ViewSingleCampaign';
 import UpdateCampaign from '../pages/Campaign/UpdateCampaign';
+import AddUsers from '../pages/Users/AddUsers';
+import EditUsers from '../pages/Users/EditUsers';
 
 function App() {
   return (
@@ -24,6 +26,8 @@ function App() {
           }
         >
           <Route path="admin/view-users" element={<ViewUsers />} />
+          <Route path="admin/add-users" element={<AddUsers />} />
+          <Route path="admin/edit-user/:userId" element={<EditUsers />} />
           <Route path="admin/upload-data" element={<UploadData />} />
           <Route path="admin/upload-form" element={<UploadForm />} />
           <Route path="admin/view-campaign" element={<ViewCampaign/>}/>
