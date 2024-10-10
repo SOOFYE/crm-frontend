@@ -5,12 +5,14 @@ import {NextUIProvider} from "@nextui-org/react";
 import 'react-toastify/dist/ReactToastify.css';
 import { ToastContainer } from 'react-toastify';
 
+
 function App() {
   return (
     <NextUIProvider>
       <Router>
         {/* Global components like Navbar, Footer, etc., can be added here */}
         <AppRoutes />
+        
         <ToastContainer
           position="top-right"
           autoClose={5000}
@@ -22,6 +24,7 @@ function App() {
           draggable
           pauseOnHover
         />
+
       </Router>
     </NextUIProvider>
   );

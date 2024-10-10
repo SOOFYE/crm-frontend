@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import { useNavigate } from 'react-router-dom';
-import { fetchCampaignDataInfo } from '../../services/dataService';
+import { fetchOriginalDataInfo } from '../../services/originalDataService';
 import { getSignedUrl } from '../../services/signedUrlService';
 import moment from 'moment';  // Import moment for date formatting
 import Chip from '../../components/Chip';
@@ -9,7 +9,7 @@ import { TABLEcustomStyles } from '../../styles/table-styles';
 import CampaignLinkModal from '../../components/Upload-Data/CampaingLinkModal';
 import { fetchCampaignIDList } from '../../services/campaignService';
 import DropDown from '../../components/DropDownComp';
-import { linkCampaign, unLinkCampaign, deleteOriginalData } from '../../services/dataService';
+import { linkCampaign, unLinkCampaign, deleteOriginalData } from '../../services/originalDataService';
 
 import { toast, Bounce } from 'react-toastify';
 
@@ -47,7 +47,7 @@ const UploadData = () => {
     const loadCampaignData = async () => {
       setLoading(true);
       try {
-        const data = await fetchCampaignDataInfo({
+        const data = await fetchOriginalDataInfo({
           page,
           limit: perPage,
           searchKey,

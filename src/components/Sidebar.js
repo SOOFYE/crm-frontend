@@ -11,13 +11,16 @@ const Sidebar = () => {
   // Admin menu items
   const adminItems = [
     { name: 'User', path: '/admin/view-users' },
+    { name: 'Campaign types', path: '/admin/view-campaign-types' },
     { name: 'Data Management', path: '/admin/upload-data' },
     { name: 'Campaign', path: '/admin/view-campaign' },
+    { name: 'Form', path: '/admin/view-forms' },
+    { name: 'Leads', path: '/admin/leads' },
   ];
 
   // Agent menu items
   const agentItems = [
-    { name: 'Leads', path: '/agent/leads' },
+    { name: 'Upload Leads', path: '/agent/leads' },
     { name: 'Follow-ups', path: '/agent/follow-ups' },
     { name: 'Profile', path: '/agent/profile' },
   ];

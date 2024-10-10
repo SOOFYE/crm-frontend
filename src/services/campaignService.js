@@ -8,7 +8,7 @@ export const fetchCampaignIDList = async () => {
  
     const token = getCookie('token');
 
-    const API_URL = process.env.REACT_APP_BACKEND_URL + 'campaigns/campaign-ids';
+    const API_URL = process.env.REACT_APP_BACKEND_URL + 'campaigns/names-ids';
   
     const headers = {};
     if (token) {
@@ -19,6 +19,8 @@ export const fetchCampaignIDList = async () => {
     const response = await axios.get(API_URL, {
       headers,
     });
+
+    console.log(response.data)
   
     return response.data;
 };
@@ -51,10 +53,10 @@ export const createCampaign = async (formData) => {
     
     const token = getCookie('token');
 
-    const API_URL = process.env.REACT_APP_BACKEND_URL + 'campaigns/create';
+    const API_URL = process.env.REACT_APP_BACKEND_URL + 'campaigns';
    
     const headers = {
-        'Content-Type': 'multipart/form-data',
+        
     };
     
     if (token) {
@@ -149,7 +151,6 @@ export const updateCampaign = async (campaignId,formData) => {
   const API_URL = process.env.REACT_APP_BACKEND_URL + `campaigns/${campaignId}`;
  
   const headers = {
-      'Content-Type': 'multipart/form-data',
   };
   
   if (token) {
@@ -181,5 +182,18 @@ export const deleteCampaign = async (campaignId) => {
     headers
   });
 
+  return response.data;
+};
+
+
+export const fetchActiveCampaignsForAgent = async () => {
+  const token = getCookie('token');
+  const headers = {
+    Authorization: `Bearer ${token}`,
+  };
+
+  const API_URL = process.env.REACT_APP_BACKEND_URL + 'campaigns/active'
+  
+  const response = await axios.get(API_URL, { headers });
   return response.data;
 };

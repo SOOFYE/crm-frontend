@@ -4,31 +4,30 @@ import { useNavigate } from 'react-router-dom';
 import { createCampaign } from '../../services/campaignService';
 import { fetchCampaignTypes } from '../../services/campaignTypeService';
 import { fetchUsers } from '../../services/usersService';
+import { fetchForms } from '../../services/formBuilderService'; // Service to fetch forms
+import { fetchCampaignDataInfo } from '../../services/campaignDataService'; // Update service call
 import { CampaignStatusEnum } from '../../common/CampaignStatusEnum';
 import { toast, Bounce } from 'react-toastify';
-
-import Papa from 'papaparse'; // To parse CSV files
 
 const CreateCampaign = () => {
   const [name, setName] = useState('');
   const [description, setDescription] = useState('');
-  const [status, setStatus] = useState('');
+  const [status, setStatus] = useState(CampaignStatusEnum.INACTIVE); // Default to inactive
   const [agents, setAgents] = useState([]);
-  const [campaignTypeId, setCampaignTypeId] = useState(null);
-  const [filterField, setFilterField] = useState('');
-  const [fileCriteria, setFileCriteria] = useState(null);
-  const [csvHeaders, setCsvHeaders] = useState([]); // Store the CSV headers after parsing
+  const [campaignTypeId, setCampaignTypeId] = useState(null); // Track selected campaign type
+  const [formId, setFormId] = useState(null); // Optional form selection
+  const [processedDataIds, setProcessedDataIds] = useState([]); // Optional processed data selection
   const [agentOptions, setAgentOptions] = useState([]);
   const [campaignTypeOptions, setCampaignTypeOptions] = useState([]);
-
-  // Additional Fields State
-  const [additionalFields, setAdditionalFields] = useState([]);
+  const [formOptions, setFormOptions] = useState([]);
+  const [processedDataOptions, setProcessedDataOptions] = useState([]);
 
   const navigate = useNavigate();
 
   useEffect(() => {
     loadAgents();
     loadCampaignTypes();
+    loadForms();
   }, []);
 
   const loadAgents = async () => {
@@ -47,75 +46,65 @@ const CreateCampaign = () => {
     setCampaignTypeOptions(data.data.map(type => ({ value: type.id, label: type.name })));
   };
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0];
-    setFileCriteria(file); // Store the CSV file
-    
-    // Parse CSV to extract headers
-    Papa.parse(file, {
-      complete: function(results) {
-        const headers = results.data[0]; // Get the first row as headers
-        setCsvHeaders(headers); // Set the headers for validation
-      },
-      header: false, // We just need to read raw rows for headers
-    });
+  const loadForms = async () => {
+    const data = await fetchForms({ page: 1, limit: 999999, searchField: ['name'] });
+    setFormOptions(data.data.map(form => ({ value: form.id, label: form.name })));
   };
 
-  const handleAddField = () => {
-    setAdditionalFields([...additionalFields, { name: '', type: '' }]);
-  };
-
-  const handleRemoveField = (index) => {
-    const newFields = [...additionalFields];
-    newFields.splice(index, 1);
-    setAdditionalFields(newFields);
-  };
-
-  const handleFieldChange = (index, field, value) => {
-    const newFields = [...additionalFields];
-    newFields[index][field] = value;
-    setAdditionalFields(newFields);
+  const loadCampaignData = async (campaignTypeId) => {
+    if (!campaignTypeId) return;
+    try {
+      const data = await fetchCampaignDataInfo(campaignTypeId); // Fetch processed data based on campaign type
+      setProcessedDataOptions(
+        data.map(campaignData => ({
+          value: campaignData.id,
+          label: campaignData.name,
+        }))
+      );
+    } catch (error) {
+      toast.error('Failed to fetch processed data', {
+        position: 'top-right',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: 'light',
+        transition: Bounce,
+      });
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
 
-    const formData = new FormData();
-    formData.append('name', name);
-    formData.append('description', description);
-    formData.append('status', status);
-    agents.forEach(agent => formData.append('agents[]', agent.value));
-    formData.append('campaignTypeId', campaignTypeId?.value);
-
-    // Convert the comma-separated filterField string to an array
-    const filterFieldArray = filterField ? filterField.split(',').map(field => field.trim()) : [];
-
-    // If a file is uploaded, validate the CSV headers
-    if (fileCriteria) {
-      const missingHeaders = filterFieldArray.filter(field => !csvHeaders.includes(field));
-      
-      if (missingHeaders.length > 0) {
-        toast.error(`The uploaded CSV is missing the following headers: ${missingHeaders.join(', ')}`, {
-          position: "top-right",
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: "light",
-          transition: Bounce,
-        });
-        return; // Stop form submission if headers don't match
-      }
+    // Ensure processed data is selected
+    if (processedDataIds.length === 0) {
+      toast.error('Please select at least one processed data entry.', {
+        position: 'top-right',
+        autoClose: 5000,
+        hideProgressBar: false,
+        closeOnClick: true,
+        pauseOnHover: true,
+        draggable: true,
+        progress: undefined,
+        theme: 'light',
+        transition: Bounce,
+      });
+      return;
     }
 
-    formData.append('filterField', filterField); // Use comma-separated string for filterField
-    if (fileCriteria) {
-      formData.append('fileCriteria', fileCriteria);
-    }
-    formData.append('additionalFields', JSON.stringify(additionalFields)); // Send additional fields as JSON
-    
+    const formData = {
+      name,
+      description,
+      status,
+      agentIds: agents.map(agent => agent.value), // Convert selected agents to their UUIDs
+      campaignTypeId: campaignTypeId?.value, // Selected campaign type
+      formId: formId?.value, // Optional form ID
+      processedDataIds: processedDataIds.map(data => data.value), // Required processed data IDs
+    };
+
     try {
       await createCampaign(formData);
       toast.success('Campaign created successfully', {
@@ -169,6 +158,7 @@ const CreateCampaign = () => {
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none"
+            placeholder="Optional"
           />
         </div>
 
@@ -207,79 +197,41 @@ const CreateCampaign = () => {
           <Select
             options={campaignTypeOptions}
             value={campaignTypeId}
-            onChange={setCampaignTypeId}
+            onChange={(selected) => {
+              setCampaignTypeId(selected);
+              loadCampaignData(selected?.value); // Load processed data for the selected campaign type
+            }}
             className="mt-1"
             placeholder="Search and select campaign type"
             required
           />
         </div>
 
-        {/* Filter Fields */}
+        {/* Form (Optional) */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Filter Fields (Comma-separated)</label>
-          <input
-            type="text"
-            value={filterField}
-            onChange={(e) => setFilterField(e.target.value)}
-            className="mt-1 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none"
-            placeholder="e.g. field1,field2"
+          <label className="block text-sm font-medium text-gray-700">Form (Optional)</label>
+          <Select
+            options={formOptions}
+            value={formId}
+            onChange={setFormId}
+            className="mt-1"
+            placeholder="Search and select form"
           />
         </div>
 
-        {/* File Criteria */}
+        {/* Processed Data (Mandatory) */}
         <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Filter Criteria File</label>
-          <input
-            type="file"
-            onChange={handleFileChange}
-            className="mt-1 block w-full"
-            disabled={!filterField} // Disable if filterField is empty
+          <label className="block text-sm font-medium text-gray-700">Processed Data</label>
+          <Select
+            isMulti
+            options={processedDataOptions}
+            value={processedDataIds}
+            onChange={(selectedOptions) => setProcessedDataIds(selectedOptions || [])}
+            className="mt-1"
+            placeholder="Select processed data"
+            required
+            isDisabled={!campaignTypeId} // Disable until campaign type is selected
           />
-        </div>
-
-        {/* Additional Fields */}
-        <div className="mb-4">
-          <label className="block text-sm font-medium text-gray-700">Additional Fields for Agents</label>
-          {additionalFields.map((field, index) => (
-            <div key={index} className="flex items-center space-x-2 mb-2">
-              <input
-                type="text"
-                value={field.name}
-                onChange={(e) => handleFieldChange(index, 'name', e.target.value)}
-                placeholder="Field Name"
-                className="w-1/2 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none"
-                required
-              />
-              <select
-                value={field.type}
-                onChange={(e) => handleFieldChange(index, 'type', e.target.value)}
-                className="w-1/4 px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none"
-                required
-              >
-                <option value="" disabled>Select Type</option>
-                <option value="text">Text</option>
-                <option value="number">Number</option>
-                <option value="date">Date</option>
-                <option value="email">Email</option>
-              </select>
-              {additionalFields.length > 1 && (
-                <button
-                  type="button"
-                  className="text-red-600"
-                  onClick={() => handleRemoveField(index)}
-                >
-                  Remove
-                </button>
-              )}
-            </div>
-          ))}
-          <button
-            type="button"
-            className="text-blue-500"
-            onClick={handleAddField}
-          >
-            + Add Field
-          </button>
         </div>
 
         {/* Submit Button */}

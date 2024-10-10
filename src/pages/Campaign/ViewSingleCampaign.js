@@ -1,271 +1,160 @@
-import React, {useEffect, useState} from 'react'
-import { toast, Bounce } from 'react-toastify';
+import React, { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { BsSearch } from 'react-icons/bs';
-import { TABLEcustomStyles } from '../../styles/table-styles';
-import { fetchFilteredData, fetchSingleCampaign, downloadFilteredData } from '../../services/campaignService';
-import DataTable from 'react-data-table-component';
-import Chip from '../../components/Chip';
-import { AiOutlineDownload } from 'react-icons/ai'; // Import download icon
-import { getSignedUrl } from '../../services/signedUrlService';
+import { fetchSingleCampaign } from '../../services/campaignService'; // Assume this service fetches campaign data
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faEdit, faLink, faCopy } from '@fortawesome/free-solid-svg-icons';
+import { toast, Bounce } from 'react-toastify';
 
-function ViewSingleCampaign() {
-  const { campaignId } = useParams(); // Get campaign ID from the URL
-  const [campaign, setCampaign] = useState(null); // Campaign data
-  const [filteredData, setFilteredData] = useState([]); // Filtered data array
-  const [filteredResults, setFilteredResults] = useState([]); // Filtered data for the search
-  const [searchTerm, setSearchTerm] = useState(''); // Search term
-  const [loading, setLoading] = useState(true);
-  const [page, setPage] = useState(1);
-  const [limit] = useState(10);
-  const [orderBy] = useState('createdAt');
-  const [orderDirection] = useState('ASC');
+const ViewSingleCampaign = () => {
+  const { campaignId } = useParams(); // Campaign ID from URL
   const navigate = useNavigate();
+  const [campaign, setCampaign] = useState(null);
+  const [agentFormLink, setAgentFormLink] = useState('');
 
-  // Function to generate search keys dynamically from the first entry in filteredData
-  const generateSearchKeys = (data) => {
-    if (data.length > 0) {
-      // Extract keys from the first object in filteredData (this will act as keyof T[])
-      return Object.keys(data[0]);
-    }
-    return [];
-  };
-
-  // Fetch the single campaign and its filtered data
   useEffect(() => {
-    const loadCampaignData = async () => {
-      try {
-        const campaignResponse = await fetchSingleCampaign(campaignId); // Fetch the campaign data
-        setCampaign(campaignResponse);
+    loadCampaign();
+  }, [campaignId]);
 
-        // Fetch filtered data
-        const filteredDataResponse = await fetchFilteredData(campaignId, {
-          page,
-          limit,
-          searchKey: searchTerm,
-          searchField: [], // Default empty array for now
-          orderBy,
-          orderDirection,
-        });
+  // Fetch the campaign details
+  const loadCampaign = async () => {
+    try {
+      const data = await fetchSingleCampaign(campaignId);
+      setCampaign(data);
 
-        const data = filteredDataResponse.data || [];
-        setFilteredData(data); // Assuming filtered data is in the `data` field
-        setFilteredResults(data); // Set initial filtered results
-
-        // Dynamically generate search fields based on the keys of the filtered data
-        const searchKeys = generateSearchKeys(data);
-        if (searchKeys.length > 0) {
-          // Update filtered data with dynamic searchField keys
-          const updatedFilteredData = await fetchFilteredData(campaignId, {
-            page,
-            limit,
-            searchKey: searchTerm,
-            searchField: searchKeys, // Use generated search keys
-            orderBy,
-            orderDirection,
-          });
-          setFilteredData(updatedFilteredData.data);
-          setFilteredResults(updatedFilteredData.data);
-        }
-
-        setLoading(false);
-      } catch (error) {
-        console.error('Error fetching campaign data:', error);
-        toast.error('Failed to load campaign data', {
-          position: 'top-right',
-          autoClose: 5000,
-          hideProgressBar: false,
-          closeOnClick: true,
-          pauseOnHover: true,
-          draggable: true,
-          progress: undefined,
-          theme: 'light',
-          transition: Bounce,
-        });
-        setLoading(false);
+      // Generate the shareable link for agents
+      if (data.form && data.id) {
+        const shareableLink = `${window.location.origin}/agent/form/${data.id}/${data.form.id}`;
+        setAgentFormLink(shareableLink);
       }
-    };
-
-    loadCampaignData();
-  }, [campaignId, page, limit, searchTerm, orderBy, orderDirection]);
-
-  const handleDownloadFilteredData = async () => {
-    try {
-      const csvData = await downloadFilteredData(campaignId);
-
-      // Create a URL for the blob data
-      const url = window.URL.createObjectURL(new Blob([csvData]));
-
-      // Create a temporary link element
-      const link = document.createElement('a');
-      link.href = url;
-      link.setAttribute('download', `filtered-data-${campaignId}.csv`); // Set the file name
-
-      // Append the link to the document and trigger the download
-      document.body.appendChild(link);
-      link.click();
-
-      // Clean up the link after the download
-      document.body.removeChild(link);
-
-      // Revoke the URL object to free up memory
-      window.URL.revokeObjectURL(url);
     } catch (error) {
-      console.error('Error downloading filtered data:', error);
+      console.error('Failed to load campaign', error);
+      toast.error('Failed to load campaign details', {
+        position: 'top-right',
+        autoClose: 5000,
+        transition: Bounce,
+      });
     }
   };
 
-  // Dynamic column generation based on filteredData keys
-  const generateColumns = () => {
-    if (filteredData.length === 0) return [];
-
-    // Use the keys from the first item in the filtered data array to generate column definitions
-    return Object.keys(filteredData[0]).map((key) => ({
-      name: key.charAt(0).toUpperCase() + key.slice(1), // Capitalize the first letter of the column name
-      selector: (row) => row[key] || '-',
-      sortable: true,
-    }));
+  // Navigate to the form view
+  const navigateToForm = (formId) => {
+    navigate(`/admin/view-single-form/${formId}`);
   };
 
+  // Navigate to edit page
+  const navigateToEdit = () => {
+    navigate(`/admin/edit-campaign/${campaignId}`);
+  };
 
-  const handlePreprocessedDataDownload = async (s3Url)=>{
+  // Copy the shareable link to clipboard
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(agentFormLink);
+    toast.success('Link copied to clipboard!', {
+      position: 'top-right',
+      autoClose: 3000,
+      transition: Bounce,
+    });
+  };
 
-    try {
-      const response = await getSignedUrl(s3Url);
-      const signedUrl = response;
-      window.open(signedUrl, '_blank'); // Open the signed URL to initiate the download
-    } catch (error) {
-      console.error('Error generating signed URL:', error);
-    }
-
+  if (!campaign) {
+    return <p>Loading campaign details...</p>;
   }
 
-  // Handle search functionality
-  useEffect(() => {
-    if (searchTerm) {
-      const results = filteredData.filter(item =>
-        Object.values(item).some(val => val && val.toString().toLowerCase().includes(searchTerm.toLowerCase()))
-      );
-      setFilteredResults(results);
-    } else {
-      setFilteredResults(filteredData);
-    }
-  }, [searchTerm, filteredData]);
-
   return (
-    <div className="p-8 max-w-7xl mx-auto bg-gray-50 shadow-md rounded-md">
-      {campaign && (
-        <>
-          {/* Campaign Info Section */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {/* Name Card */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-2xl font-bold mb-2 text-gray-800">{campaign.name}</h2>
-              <p className="text-sm text-gray-600">Campaign Name</p>
-            </div>
+    <div className="max-w-5xl mx-auto p-8 bg-white rounded-lg shadow-md">
+      <div className="flex justify-between items-center mb-6">
+        <h2 className="text-3xl font-bold">{campaign.name}</h2>
+        <button
+          onClick={navigateToEdit}
+          className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
+        >
+          <FontAwesomeIcon icon={faEdit} /> Edit Campaign
+        </button>
+      </div>
 
-            {/* Status Card */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-2xl font-bold mb-2">
-                <Chip color={campaign.status === 'active' ? 'success' : 'warning'} status={campaign.status} />
-              </h2>
-              <p className="text-sm text-gray-600">Campaign Status</p>
-            </div>
+      {/* Campaign Description */}
+      <div className="mb-4">
+        <h3 className="text-xl font-semibold text-gray-700">Description</h3>
+        <p className="text-gray-600">{campaign.description || 'No description provided.'}</p>
+      </div>
 
-            {/* Type Card */}
-            <div className="bg-white p-6 rounded-lg shadow">
-              <h2 className="text-2xl font-bold mb-2 text-gray-800">{campaign.campaignType?.name || 'Unknown'}</h2>
-              <p className="text-sm text-gray-600">Campaign Type</p>
-            </div>
-          </div>
+      {/* Campaign Status */}
+      <div className="mb-4">
+        <h3 className="text-xl font-semibold text-gray-700">Status</h3>
+        <p className={`text-lg ${campaign.status === 'active' ? 'text-green-500' : 'text-red-500'}`}>
+          {campaign.status}
+        </p>
+      </div>
 
-          {/* Assigned Agents */}
-          <div className="bg-white p-6 rounded-lg shadow mb-8">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Assigned Agents</h3>
-            <div className="flex flex-wrap gap-2">
-              {campaign.agents && campaign.agents.length > 0 ? (
-                campaign.agents.map((agent) => (
-                  <span key={agent.id} className="text-lg font-semibold text-white bg-blue-500 py-1 px-3 rounded-full">
-                    {`${agent.firstname} ${agent.lastname}`}
-                  </span>
-                ))
-              ) : (
-                <p className="text-lg text-gray-800">No agents assigned.</p>
-              )}
-            </div>
-          </div>
-
-          {/* Processed Data */}
-          <div className="bg-white p-6 rounded-lg shadow mb-8">
-            <h3 className="text-xl font-bold mb-4 text-gray-800">Processed Data</h3>
-            {campaign.processedData ? (
-              <div className="text-lg text-gray-800">
-                <p className="font-semibold">Name: {campaign.processedData.name}</p>
-                <a
-                  // href={campaign.processedData.s3Url}
-                  onClick={() => handlePreprocessedDataDownload(campaign?.processedData?.s3Url)} 
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:cursor-pointer text-blue-500 underline"
-                >
-                  Download
-                </a>
-              </div>
-            ) : (
-              <p className="text-lg text-gray-800">No processed data available.</p>
-            )}
-          </div>
-        </>
+      {/* Form Link */}
+      {campaign.form && (
+        <div className="mb-4">
+          <h3 className="text-xl font-semibold text-gray-700">Form</h3>
+          <button
+            onClick={() => navigateToForm(campaign.form.id)}
+            className="text-blue-500 hover:underline flex items-center"
+          >
+            <FontAwesomeIcon icon={faLink} className="mr-2" />
+            View Linked Form: {campaign.form.name}
+          </button>
+        </div>
       )}
 
-      {/* Filtered Data Section */}
-      {!loading && filteredData.length > 0 ? (
-        <>
-          <div className="mb-4 flex justify-between items-center">
-            <h2 className="text-2xl font-bold text-gray-800">Filtered Data</h2>
-            <div className="flex items-center space-x-4">
-              {/* Search Input */}
-              <div className="flex items-center space-x-2">
-                <BsSearch className="text-gray-500" />
-                <input
-                  type="text"
-                  placeholder="Search data..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="p-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-              </div>
-              {/* Download Button */}
-              <button
-                onClick={handleDownloadFilteredData}
-                className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
-              >
-                <AiOutlineDownload className="inline-block mr-2" /> Download Data
-              </button>
-            </div>
+      {/* Assigned Agents */}
+      <div className="mb-6">
+        <h3 className="text-xl font-semibold text-gray-700">Assigned Agents</h3>
+        {campaign.agents.length > 0 ? (
+          <ul className="list-disc pl-5">
+            {campaign.agents.map((agent) => (
+              <li key={agent.id} className="text-gray-700">
+                {agent.username} ({agent.firstname} {agent.lastname})
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p className="text-gray-600">No agents assigned.</p>
+        )}
+      </div>
+
+      {/* Preprocessed Data */}
+      {campaign.processedData && campaign.processedData.length > 0 && (
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold text-gray-700">Preprocessed Data</h3>
+          <ul className="list-disc pl-5">
+            {campaign.processedData.map((data) => (
+              <li key={data.id} className="text-gray-700">
+                <a href={data.s3Url} download className="text-blue-500 hover:underline">
+                  {data.name} (Download)
+                </a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
+      {/* Agent Shareable Link */}
+      {agentFormLink && (
+        <div className="mb-6">
+          <h3 className="text-xl font-semibold text-gray-700">Shareable Link for Agents</h3>
+          <div className="flex items-center">
+            <input
+              type="text"
+              value={agentFormLink}
+              readOnly
+              className="border border-gray-300 px-3 py-2 rounded-l w-full"
+            />
+            <button
+              onClick={copyToClipboard}
+              className="bg-blue-500 text-white px-4 py-2 rounded-r hover:bg-blue-600 flex items-center"
+            >
+              <FontAwesomeIcon icon={faCopy} className="mr-2" />
+              Copy Link
+            </button>
           </div>
-          <div className="overflow-x-auto">
-          <DataTable
-            columns={generateColumns()} // Generate columns dynamically
-            data={filteredResults}
-            customStyles={TABLEcustomStyles}
-            pagination
-          />
-          </div>
-        </>
-      ) : !loading && (
-        <div className="text-center mt-8">
-          <p className="text-lg text-gray-600 mb-4">No filtered data available for this campaign.</p>
-          <button
-            onClick={() => navigate('/path/to/other-page')}
-            className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition"
-          >
-            Add Filtered Data
-          </button>
         </div>
       )}
     </div>
   );
-}
+};
 
 export default ViewSingleCampaign;

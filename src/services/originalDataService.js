@@ -3,11 +3,11 @@ import { getCookie } from '../utils/getcookie';
 
 
 
-export const fetchCampaignDataInfo = async (params) => {
-  // Get the token from the cookie
+export const fetchOriginalDataInfo = async (params) => {
+  
   const token = getCookie('token');
 
-  // Configure headers to include the Authorization header if token exists
+  
   const headers = {};
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;
@@ -15,12 +15,14 @@ export const fetchCampaignDataInfo = async (params) => {
 
   const API_URL = process.env.REACT_APP_BACKEND_URL + 'original-campaign-data';
 
-  // Make the request with the Authorization header
+ 
   const response = await axios.get(API_URL, {
     params,
     headers,
     
   });
+
+  console.log(response.data)
 
   return response.data;
 };
@@ -31,7 +33,7 @@ export const uploadCampaignData = async (formData) => {
 
  
   const headers = {
-    'Content-Type': 'multipart/form-data',
+    
   };
   if (token) {
     headers['Authorization'] = `Bearer ${token}`;

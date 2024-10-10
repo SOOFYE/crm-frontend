@@ -2,45 +2,45 @@ import React, { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import { useNavigate } from 'react-router-dom';
 import moment from 'moment';
-import { TABLEcustomStyles } from '../../styles/table-styles';
-import DropDown from '../../components/DropDownComp';
-import { fetchCampaigns, deleteCampaign } from '../../services/campaignService';
+import { TABLEcustomStyles } from '../../styles/table-styles'; 
+import DropDown from '../../components/DropDownComp'; 
+import { fetchForms, deleteForm } from '../../services/formBuilderService'; 
 import Modal from 'react-modal';
 import { MODALcustomStyles } from '../../styles/react-modal-styles';
 import { toast, Bounce } from 'react-toastify';
 
-const ViewCampaign = () => {
-    const [data, setData] = useState([]);
-    const [loading, setLoading] = useState(true);
+const ViewForms = () => {
+    const [data, setData] = useState([]); 
+    const [loading, setLoading] = useState(true); 
     const [searchKey, setSearchKey] = useState('');
     const [page, setPage] = useState(1);
     const [totalRows, setTotalRows] = useState(0);
     const [perPage, setPerPage] = useState(10);
     const [sortField, setSortField] = useState('createdAt');
     const [sortDirection, setSortDirection] = useState('desc');
-    const [showModal, setShowModal] = useState(false); // State for modal visibility
-    const [selectedCampaign, setSelectedCampaign] = useState(null); // State to track the selected campaign
+    const [showModal, setShowModal] = useState(false); 
+    const [selectedForm, setSelectedForm] = useState(null); 
     const navigate = useNavigate();
 
     useEffect(() => {
-        loadCampaigns();
+        loadForms();
     }, [page, perPage, sortField, sortDirection, searchKey]);
 
-    const loadCampaigns = async () => {
+    const loadForms = async () => {
         setLoading(true);
         try {
-            const data = await fetchCampaigns({
+            const data = await fetchForms({
                 page,
                 limit: perPage,
                 searchKey,
-                searchField:['name'],
+                searchField: ['name'],
                 orderBy: sortField || 'createdAt',
                 orderDirection: sortDirection.toUpperCase(),
             });
             setData(data.data);
             setTotalRows(data.total);
         } catch (error) {
-            console.error('Error fetching campaigns:', error);
+            console.error('Error fetching forms:', error);
         } finally {
             setLoading(false);
         }
@@ -60,72 +60,59 @@ const ViewCampaign = () => {
     };
 
     const handleView = (row) => {
-        navigate(`/admin/view-single-campaign/${row.id}`);
+        navigate(`/admin/view-single-form/${row.id}`);
     };
 
     const handleEdit = (row) => {
-        navigate(`/admin/edit-campaign/${row.id}`);
+        navigate(`/admin/edit-form/${row.id}`);
     };
 
-    // const handleViewData = (row) => {
-    //     console.log('Viewing data for campaign', row.name);
-    // };
-
     const handleDelete = (row) => {
-        setSelectedCampaign(row); // Set the campaign to be deleted
-        setShowModal(true); // Show the confirmation modal
+        setSelectedForm(row); 
+        setShowModal(true); 
     };
 
     const confirmDelete = async () => {
         try {
-            await deleteCampaign(selectedCampaign.id); // Implement the delete service
-            setShowModal(false); // Close the modal
-            setSelectedCampaign(null); // Clear selected campaign
-            toast.success('Campaign deleted successfully', {
+            await deleteForm(selectedForm.id); 
+            setShowModal(false); 
+            setSelectedForm(null); 
+            toast.success('Form deleted successfully', {
                 position: "top-right",
                 autoClose: 5000,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
                 draggable: true,
-                progress: undefined,
                 theme: "light",
                 transition: Bounce,
-              });
-            loadCampaigns(); // Reload campaigns
+            });
+            loadForms(); 
         } catch (error) {
-            toast.error('Error deleting campaign', {
+            toast.error('Error deleting form', {
                 position: "top-right",
                 autoClose: 5000,
                 hideProgressBar: false,
                 closeOnClick: true,
                 pauseOnHover: true,
                 draggable: true,
-                progress: undefined,
                 theme: "light",
                 transition: Bounce,
-              });
-            console.error('Error deleting campaign:', error);
+            });
+            console.error('Error deleting form:', error);
         }
     };
 
     const dropdownOptions = [
         { label: 'View', onClick: handleView },
         { label: 'Edit', onClick: handleEdit },
-        // { label: 'View Data', onClick: handleViewData },
         { label: 'Delete', onClick: handleDelete },
     ];
 
     const columns = [
         { name: 'Name', backend: 'name', selector: row => row?.name || '-', sortable: true },
-        { name: 'Agents', backend: 'name', selector: row => row?.agents.length || '-', sortable: true },
-        // { name: 'Description', backend: 'description', selector: row => row?.description || '-', sortable: true },
-        { 
-            name: 'Created At', 
-            backend: 'createdAt', 
-            selector: row => moment(row?.createdAt).format('MMMM Do YYYY, h:mm:ss a') || '-', 
-            sortable: true 
-        },
+        { name: 'Created At', backend: 'createdAt', selector: row => moment(row?.createdAt).format('MMMM Do YYYY, h:mm:ss a') || '-', sortable: true },
+        { name: 'Updated At', backend: 'updatedAt', selector: row => moment(row?.updatedAt).format('MMMM Do YYYY, h:mm:ss a') || '-', sortable: true },
         {
             name: 'Actions',
             cell: row => (
@@ -140,7 +127,7 @@ const ViewCampaign = () => {
 
     return (
         <div className="p-8">
-            <h1 className="text-2xl font-bold mb-4">View Campaigns</h1>
+            <h1 className="text-2xl font-bold mb-4">View Forms</h1>
             <div className="flex justify-between mb-4">
                 <input
                     type="text"
@@ -150,10 +137,10 @@ const ViewCampaign = () => {
                     className="border border-gray-300 p-2 rounded w-1/2"
                 />
                 <button
-                    onClick={() => navigate('/admin/create-campaign')}
+                    onClick={() => navigate('/admin/create-form')}
                     className="bg-blue-500 text-white p-2 rounded"
                 >
-                    Create Campaign
+                    Create Form
                 </button>
             </div>
             <div className="overflow-x-auto">
@@ -183,7 +170,7 @@ const ViewCampaign = () => {
                 style={MODALcustomStyles}
             >
                 <h2 className="text-xl font-bold">Confirm Deletion</h2>
-                <p>Are you sure you want to delete the campaign <strong>{selectedCampaign?.name}</strong>?</p>
+                <p>Are you sure you want to delete the form <strong>{selectedForm?.name}</strong>?</p>
                 <div className="flex justify-end mt-4">
                     <button
                         onClick={() => setShowModal(false)}
@@ -203,4 +190,4 @@ const ViewCampaign = () => {
     );
 };
 
-export default ViewCampaign;
+export default ViewForms;
