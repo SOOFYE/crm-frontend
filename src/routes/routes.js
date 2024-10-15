@@ -23,6 +23,8 @@ import AgentFormPage from '../pages/Enter-Leads-Agents/AgentFormPage';
 import ViewLeads from '../pages/Leads-Admin/ViewLeads';
 import ViewSingleLead from '../pages/Leads-Admin/ViewSingleLead';
 import EditLeads from '../pages/Leads-Admin/EditLeads';
+import AttendanceDashboard from '../pages/Attendance-Agent/AttendanceDashboard';
+import ViewAttendanceLogsAdmin from '../pages/Attendance-Admin/ViewAttendanceLogsAdmin';
 
 function App() {
   return (
@@ -63,12 +65,18 @@ function App() {
           <Route path="admin/view-lead/:leadId" element={<ViewSingleLead />} />
           <Route path="admin/edit-lead/:leadId" element={<EditLeads />} />
 
+          <Route path="admin/attendance-management" element={<ViewAttendanceLogsAdmin />} />
+
+
+          <Route path="agent/attendance" element={<AttendanceDashboard />} />
 
           <Route path="agent/leads" element={<ActiveCampaigns />} />
 
           <Route path="agent/campaign/:campaignId/form/:formId" element={<AgentSearchPage/>} />
 
           <Route path="agent/campaign/:campaignId/form/:formId/form-entry" element={<AgentFormPage/>} />
+
+
 
           {/* Other protected routes */}
         </Route>

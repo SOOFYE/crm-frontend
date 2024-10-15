@@ -20,8 +20,22 @@ export const fetchUsers = async (params) => {
       params,
       headers,
     });
-
-    console.log(response)
   
+    return response.data;
+  };
+
+
+
+  export const getAgentWorkingHoursAndBreakTime = async () => {
+    const token = getCookie('token');
+    const headers = {};
+  
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+  
+    const API_URL = process.env.REACT_APP_BACKEND_URL + 'users/workingHours';
+    const response = await axios.get(API_URL, { headers });
+    
     return response.data;
   };
