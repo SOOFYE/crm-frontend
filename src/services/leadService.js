@@ -9,6 +9,7 @@ export const fetchLeads = async (filters) => {
 
   const { paginatedOptions, agents, statuses, campaignIds, lists, dateRange } = filters;
 
+
   const params = {
     page: paginatedOptions.page,
     limit: paginatedOptions.limit,
@@ -79,5 +80,30 @@ export const fetchLeads = async (filters) => {
       console.error('Error updating lead:', error);
       throw error; // Handle errors as needed
     }
+
+
   };
  
+
+  export const updateLeadStatus = async (leadId, newStatus) => {
+    console.log(leadId)
+    const token = getCookie('token'); // Assuming token-based authentication
+  
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',  // Ensure JSON content type
+    };
+  
+    try {
+      const API_URL = `${process.env.REACT_APP_BACKEND_URL}leads/${leadId}/status`;
+  
+      // Send the PATCH request with the new status
+      const response = await axios.patch(API_URL, { status: newStatus }, { headers });
+  
+      console.log('Lead status updated successfully:', response.data);
+      return response.data;
+    } catch (error) {
+      console.error('Error updating lead status:', error);
+      throw error; // Handle errors as needed
+    }
+  };

@@ -2,6 +2,8 @@ import React, { useContext, useState } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import { Link } from 'react-router-dom';
 import { AiOutlineMenu } from 'react-icons/ai'; // Hamburger icon for mobile
+import INNOAXIS from '../assets/INNOAXIS.png'
+
 
 const Sidebar = () => {
   const { user } = useContext(AuthContext); // Get user info from context
@@ -10,6 +12,7 @@ const Sidebar = () => {
 
   // Admin menu items
   const adminItems = [
+    { name: 'Dashboard', path: '/admin/dashboard' },
     { name: 'User', path: '/admin/view-users' },
     { name: 'Attendance Management', path: '/admin/attendance-management' },
     { name: 'Campaign types', path: '/admin/view-campaign-types' },
@@ -34,16 +37,16 @@ const Sidebar = () => {
     <div className="flex min-h-screen flex-col justify-between border-e bg-white">
       {/* Sidebar Top */}
       <div className="px-4 py-6">
-        <span className="grid h-10 w-32 place-content-center rounded-lg bg-gray-100 text-xs text-gray-600">
-          Logo
-        </span>
+      <span className="grid h-10 w-32 place-content-center rounded-lg text-xs text-gray-600 transform transition-transform duration-300 hover:scale-110">
+  <img src={INNOAXIS} alt="Logo"/>
+</span>
 
         <ul className="mt-6 space-y-1">
           {items.map((item, index) => (
             <li key={index}>
               <Link
                 to={item.path}
-                className="block rounded-lg px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+                className="block rounded-lg px-4 py-2 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-purple-600"
               >
                 {item.name}
               </Link>
@@ -51,7 +54,7 @@ const Sidebar = () => {
           ))}
 
           {/* Example of Teams dropdown - common for both roles */}
-          <li>
+          {/* <li>
             <details className="group [&_summary::-webkit-details-marker]:hidden">
               <summary className="flex cursor-pointer items-center justify-between rounded-lg px-4 py-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700">
                 <span className="text-sm font-medium">Teams</span>
@@ -92,10 +95,10 @@ const Sidebar = () => {
                 </li>
               </ul>
             </details>
-          </li>
+          </li> */}
 
           {/* Example of Account dropdown - common for both roles */}
-          <li>
+          {/* <li>
             <details className="group [&_summary::-webkit-details-marker]:hidden">
               <summary className="flex cursor-pointer items-center justify-between rounded-lg px-4 py-2 text-gray-500 hover:bg-gray-100 hover:text-gray-700">
                 <span className="text-sm font-medium">Account</span>
@@ -147,7 +150,7 @@ const Sidebar = () => {
                 </li>
               </ul>
             </details>
-          </li>
+          </li> */}
         </ul>
       </div>
 

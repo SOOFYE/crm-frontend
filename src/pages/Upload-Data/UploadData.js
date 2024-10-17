@@ -10,8 +10,9 @@ import CampaignLinkModal from '../../components/Upload-Data/CampaingLinkModal';
 import { fetchCampaignIDList } from '../../services/campaignService';
 import DropDown from '../../components/DropDownComp';
 import { linkCampaign, unLinkCampaign, deleteOriginalData } from '../../services/originalDataService';
-
 import { toast, Bounce } from 'react-toastify';
+import { confirmAlert } from 'react-confirm-alert'; // Import the confirm alert library
+import 'react-confirm-alert/src/react-confirm-alert.css';
 
 
 const UploadData = () => {
@@ -146,12 +147,49 @@ const UploadData = () => {
   };
 
   const handleDelete = async (row) => {
-    try{
-    await deleteOriginalData(row.id)
-    }catch(error){
-      console.log(error)
-    }
-};
+    // Trigger the confirmation alert
+    confirmAlert({
+      title: 'Confirm Deletion',
+      message: 'Are you sure you want to delete this data?',
+      buttons: [
+        {
+          label: 'Yes',
+          onClick: async () => {
+            try {
+              await deleteOriginalData(row.id);
+              toast.success('Data deleted successfully.', {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+              });
+              loadCampaignData();
+            } catch (error) {
+              toast.error(error.response.data.error || 'Failed to delete data.', {
+                position: "top-right",
+                autoClose: 5000,
+                hideProgressBar: false,
+                closeOnClick: true,
+                pauseOnHover: true,
+                draggable: true,
+                progress: undefined,
+                theme: "light",
+                transition: Bounce,
+              });
+            }
+          },
+        },
+        {
+          label: 'No',
+        },
+      ],
+    });
+  };
 
 
 
@@ -188,7 +226,7 @@ const UploadData = () => {
 
 
       const dropdownOptions = [
-        { label: 'Delete', onClick: handleDelete() },
+        { label: 'Delete', onClick: handleDelete },
     ];
   
     const columns = [
@@ -272,25 +310,7 @@ const UploadData = () => {
         name: 'Actions',
         cell: row => (
             <DropDown
-                options={
-
-                  !row?.preprocessedData?.campaign && row?.preprocessedData?.status == 'success'
-                  ?
-                  [
-                    { label: 'Link to Campaign', onClick: () => handleLinkToCampaign(row) },
-                    { label: 'Delete', onClick: () => handleDelete(row) }
-                  ] :
-                  row?.preprocessedData?.campaign && row?.preprocessedData?.status === 'success'
-                  ?
-                  [
-                    { label: 'Unlink from Campaign', onClick: () => handleUnlinkCampaign(row) },
-                    { label: 'Delete', onClick: () => handleDelete(row) }
-                  ] :
-                  
-                  [
-                    { label: 'Delete', onClick: () => handleDelete(row) }
-                  ]
-                }
+                options={dropdownOptions}
                 row={row}
             />
         ),

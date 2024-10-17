@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import DataTable from 'react-data-table-component';
 import moment from 'moment';
 import { TABLEcustomStyles } from '../../styles/table-styles';
-import { fetchLeads } from '../../services/leadService'; // Import the lead fetching service
+import { fetchLeads, updateLeadStatus } from '../../services/leadService'; // Import the lead fetching service
 import Select from 'react-select';
 import DatePicker from 'react-datepicker';  // Add date picker for date ranges
 import 'react-datepicker/dist/react-datepicker.css';
@@ -12,11 +12,18 @@ import { fetchUsers } from '../../services/usersService';
 import { fetchCampaignIDList } from '../../services/campaignService';
 import { fetchCampaignDataIDList } from '../../services/campaignDataService';
 
+import { FaSearch } from 'react-icons/fa'; 
+
+import DropDown from '../../components/DropDownComp';
+
+import { toast } from 'react-toastify';
+
 const ViewLeads = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
+  const [selectedRows, setSelectedRows] = useState([]); // State for selected rows
   const [perPage, setPerPage] = useState(10);
   const [sortField, setSortField] = useState('createdAt');
   const [sortDirection, setSortDirection] = useState('desc');
@@ -69,7 +76,6 @@ const ViewLeads = () => {
     }
   };
 
-
   const loadAgents = async () => {
     const data = await fetchUsers({
       page: 1,
@@ -81,31 +87,25 @@ const ViewLeads = () => {
     setAgentOptions(agents.map(agent => ({ value: agent.id, label: `${agent.username} - ${agent.firstname} ${agent.lastname}` })));
   };
 
-
-  const loadCampaignListAndIds = async ()=>{
+  const loadCampaignListAndIds = async ()=> {
     const data = await fetchCampaignIDList();
-    console.log(data)
+    console.log(data);
     setCampaignOptions(data.map(campaign => ({ value: campaign.id, label: `${campaign.name}` })));
+  };
 
-  }
-
-
-  const loadCampaignDataListAndIds = async ()=>{
+  const loadCampaignDataListAndIds = async ()=> {
     const data = await fetchCampaignDataIDList();
-    console.log(data)
+    console.log(data);
     setListOptions(data.map(list => ({ value: list.id, label: `${list.name}` })));
+  };
 
-  }
-
+  // Trigger loading leads only on filters change, excluding searchKey
   useEffect(() => {
     loadLeads();
     loadAgents();
     loadCampaignListAndIds();
     loadCampaignDataListAndIds();
-  }, [page, perPage, sortField, sortDirection, selectedAgents, selectedStatuses, selectedCampaigns, selectedLists, dateRange, searchKey]);
-
-
-
+  }, [page, perPage, sortField, sortDirection, selectedAgents, selectedStatuses, selectedCampaigns, selectedLists, dateRange]);
 
   // Handle sorting
   const handleSort = (column, sortDirection) => {
@@ -118,13 +118,95 @@ const ViewLeads = () => {
 
   const handlePerRowsChange = (newPerPage) => setPerPage(newPerPage);
 
+  // Handle search trigger on button click
+  const handleSearch = () => {
+    loadLeads();  // Trigger lead loading when search button is clicked
+  };
+
+
+  const handleView = (row)=>{
+    navigate(`/admin/view-lead/${row.id}`)
+  }
+
+  const handleEdit = (row)=>{
+    navigate(`/admin/view-lead/${row.id}`)
+  }
+
+  const handleStatusChange = async (leadId, newStatus) => {
+    try {
+      // Use the `updateLead` function from the service to update the status
+      const updatedLead = await updateLeadStatus(leadId, { status: newStatus });
+      toast.success(`Lead status updated to ${newStatus}`);
+      // Optionally, refresh the leads data
+      loadLeads();
+    } catch (error) {
+      console.error(`Error updating lead status to ${newStatus}:`, error);
+      toast.error(`Failed to update lead status to ${newStatus}`);
+    }
+  };
+  
+  const handlePendingChange = (row) => {
+    handleStatusChange(row.id, 'pending');
+  };
+  
+  const handleApprovedChange = (row) => {
+    handleStatusChange(row.id, 'approved');
+  };
+  
+  const handleRejectedChange = (row) => {
+    handleStatusChange(row.id, 'rejected');
+  };
+  
+  const handleActiveChange = (row) => {
+    handleStatusChange(row.id, 'active');
+  };
+
+  const handleRowSelected = (rows) => {
+    setSelectedRows(rows.selectedRows); // Update state with selected rows
+  };
+
   // Dropdown options for statuses
   const statusOptions = [
-    { value: 'PENDING', label: 'Pending' },
-    { value: 'COMPLETED', label: 'Completed' },
-    { value: 'FAILED', label: 'Failed' },
+    { value: 'pending', label: 'Pending' },
+    { value: 'active', label: 'In-Active' },
+    { value: 'approved', label: 'Approved' },
+    { value: 'rejected', label: 'Rejected' },
     // Add other statuses
   ];
+
+  const handleCopyFormData = (rows) => {
+    const formattedData = rows
+      .map(row => Object.keys(row.formData).map(key => row.formData[key]).join('\t'))
+      .join('\n'); // Separate rows with new line
+      
+    navigator.clipboard.writeText(formattedData)
+      .then(() => toast.success('Form data for selected rows copied to clipboard!'))
+      .catch(err => toast.error('Failed to copy form data'));
+  };
+
+  const dropdownOptions = [
+    { label: 'View', onClick: handleView },
+    { label: 'Edit', onClick: handleEdit },
+    { label: 'Mark Pending', onClick: handlePendingChange },
+    { label: 'Mark Approved', onClick: handleApprovedChange },
+    { label: 'Mark Rejected', onClick: handleRejectedChange },
+    { label: 'Mark Active', onClick: handleActiveChange },
+    { label: 'Copy Form Data', onClick: handleCopyFormData }, 
+  ];
+
+
+
+  const getFilteredOptions = (currentStatus) => {
+    return dropdownOptions.filter(option => {
+      let st = option.label.toLowerCase()
+      // Don't show the option corresponding to the current status
+      if (st.includes(currentStatus)) {
+        return false; // Exclude the option that matches the current status
+      }
+      return true; // Show other options
+    });
+  };
+
 
 
   const columns = [
@@ -140,12 +222,10 @@ const ViewLeads = () => {
     {
       name: 'Actions',
       cell: row => (
-        <button
-          onClick={() => navigate(`/admin/view-lead/${row.id}`)}
-          className="bg-blue-500 text-white p-2 rounded"
-        >
-          View
-        </button>
+<DropDown 
+                   options={getFilteredOptions(row.status)} 
+                    row={row}
+                />
       ),
       sortable: false,
     },
@@ -156,8 +236,8 @@ const ViewLeads = () => {
       <h1 className="text-2xl font-bold mb-4">View Leads</h1>
       
       {/* Filters */}
-      <div className="flex justify-between mb-4">
-        <div className="w-1/5">
+      <div className="md:flex sm:grid sm:grid-cols-1 sm:gap-3 justify-between mb-4">
+        <div className="flex">
           <input
             type="text"
             placeholder="Search by phone number..."
@@ -165,6 +245,12 @@ const ViewLeads = () => {
             onChange={(e) => setSearchKey(e.target.value)}
             className="border border-gray-300 p-2 rounded w-full"
           />
+<button 
+  onClick={handleSearch} 
+  className="bg-white-500 text-white p-1 rounded ml-2 mr-2 flex items-center justify-center"
+>
+  <FaSearch size={16} color='gray' /> {/* Search icon with size 16 */}
+</button>
         </div>
         <div className="w-1/5 mx-2">
           <Select
@@ -211,6 +297,15 @@ const ViewLeads = () => {
         </div>
       </div>
 
+      {selectedRows.length > 0 && (
+        <button
+          onClick={() => handleCopyFormData(selectedRows)}
+          className="bg-blue-500 text-white py-2 px-4 rounded mb-4"
+        >
+          Copy Selected Rows
+        </button>
+      )}
+
       {/* DataTable */}
       <div className="overflow-x-auto">
         <DataTable
@@ -226,6 +321,8 @@ const ViewLeads = () => {
           onSort={handleSort}
           highlightOnHover
           pointerOnHover
+          selectableRows
+          onSelectedRowsChange={handleRowSelected}
           customStyles={TABLEcustomStyles}
         />
       </div>

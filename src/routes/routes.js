@@ -25,6 +25,8 @@ import ViewSingleLead from '../pages/Leads-Admin/ViewSingleLead';
 import EditLeads from '../pages/Leads-Admin/EditLeads';
 import AttendanceDashboard from '../pages/Attendance-Agent/AttendanceDashboard';
 import ViewAttendanceLogsAdmin from '../pages/Attendance-Admin/ViewAttendanceLogsAdmin';
+import AdminDashboardMetrics from '../pages/Dashboard-Admin/AdminDashboardMetrics';
+import AdminMainDashBoard from '../pages/Dashboard-Admin/AdminMainDashBoard';
 
 function App() {
   return (
@@ -67,6 +69,7 @@ function App() {
 
           <Route path="admin/attendance-management" element={<ViewAttendanceLogsAdmin />} />
 
+          <Route path="admin/dashboard" element={<AdminMainDashBoard />} />
 
           <Route path="agent/attendance" element={<AttendanceDashboard />} />
 

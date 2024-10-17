@@ -1,62 +1,69 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { Input, Button, Card, Spacer } from '@nextui-org/react';
 import { AuthContext } from '../context/AuthContext'; // Adjust the import path as necessary
 import { loginService } from '../services/authService'; // Import the login service
 import { useCookies } from 'react-cookie'; // Import cookies handling
-import { toast,Bounce } from 'react-toastify';
+import { toast, Bounce } from 'react-toastify';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 const LoginPage = () => {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
-  const { login } = useContext(AuthContext);
+  const { login, user } = useContext(AuthContext); // Get the user context
   const [cookies, setCookie] = useCookies(['userToken']); // Initialize cookies
   const navigate = useNavigate(); // Initialize useNavigate
 
-  const handleLogin = async () => {
+  // Check if user is already logged in and redirect accordingly
+  useEffect(() => {
+    if (user?.token || cookies.token) {
+      const defaultRoute = user?.role === 'admin' ? '/admin/dashboard' : '/agent/attendance';
+      navigate(defaultRoute);
+    }
+  }, [user, cookies.token, navigate]);
 
+  const handleLogin = async () => {
     try {
       const response = await loginService(username, password);
-      console.log(response)
+      console.log(response);
       const token = response.data.accessToken;
-      const fullName = response.data.user.firstName + response.data.user.lastName
-      const role = response.data.user.role
+      const fullName = `${response.data.user.firstName} ${response.data.user.lastName}`;
+      const role = response.data.user.role;
 
       // Set the token in cookies
       setCookie('token', token, { path: '/' });
 
       // Set the user data in context
-      login({ fullName, role, token, });
+      login({ fullName, role, token });
 
       toast.success('Successfully logged in', {
-        position: "top-right",
+        position: 'top-right',
         autoClose: 5000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        theme: "light",
+        theme: 'light',
         transition: Bounce,
-        });
+      });
 
-        const defaultRoute = role === 'admin' ? '/admin/view-campaign' : '/agent/leads';
-        navigate(defaultRoute);
-     
-      console.log(`Logged in as ${fullName} with roles: ${role}`);
+      const defaultRoute = role === 'admin' ? '/admin/dashboard' : '/agent/attendance';
+      navigate(defaultRoute);
+
+      console.log(`Logged in as ${fullName} with role: ${role}`);
     } catch (error) {
       console.error('Login failed:', error);
-      toast.error(error.response?.data?.message || "Server Error", {
-        position: "top-right",
+      toast.error(error.response?.data?.message || 'Server Error', {
+        position: 'top-right',
         autoClose: 5000,
         hideProgressBar: false,
         closeOnClick: true,
         pauseOnHover: true,
         draggable: true,
         progress: undefined,
-        theme: "light",
+        theme: 'light',
         transition: Bounce,
-    });
+      });
     }
   };
 

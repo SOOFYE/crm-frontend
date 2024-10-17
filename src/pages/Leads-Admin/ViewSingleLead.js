@@ -54,7 +54,7 @@ function ViewSingleLead() {
   const renderProducts = () => {
     if (!lead || !lead.form || !lead.form.productsAndPrices) return null;
 
-    return lead.form.productsAndPrices.map((product, index) => (
+    return lead.selectedProducts ? lead.form.productsAndPrices.map((product, index) => (
       <div key={index} className="p-4 bg-white rounded-lg shadow-md mb-4">
         <p className="text-lg text-gray-700">
           {product.name}: <span className="text-green-700">${product.price}</span>
@@ -63,7 +63,7 @@ function ViewSingleLead() {
           )}
         </p>
       </div>
-    ));
+    )) : <div>Does not exsist</div>
   };
 
   if (loading) {
