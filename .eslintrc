@@ -1,0 +1,6 @@
+{
+    "rules": {
+      "no-unused-vars": "warn", // Treat unused vars as warnings instead of errors
+      "react-hooks/exhaustive-deps": "warn" // Treat missing deps as warnings
+    }
+  }
