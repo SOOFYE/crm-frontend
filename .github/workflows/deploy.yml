@@ -38,18 +38,6 @@ jobs:
         source: "crm-frontend/build/*"
         target: "/var/www/html/crm-frontend"
 
-    - name: Pull latest code on EC2
-      uses: appleboy/ssh-action@master
-      with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_PRIVATE_KEY }}
-        port: 22
-        script: |
-          cd ~/crm-frontend  # Go to your project directory on EC2
-          git reset --hard HEAD  # Ensure clean working directory
-          git pull origin master  # Pull latest changes from GitHub
-
     - name: Restart Nginx
       uses: appleboy/ssh-action@master
       with:
@@ -57,4 +45,5 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_PRIVATE_KEY }}
         port: 22
-        script: sudo systemctl restart nginx
+        script: |
+          sudo systemctl restart nginx
