@@ -24,14 +24,11 @@ jobs:
 
     - name: Install dependencies
       run: |
-        cd ~
-        cd ./crm-frontend
         npm install
 
     - name: Build React application
       run: |
-        cd ~
-        cd ./crm-frontend
+
         npm run build  # Creates a production build in 'crm-frontend/build/'
 
     - name: Deploy build folder to EC2 via SCP
