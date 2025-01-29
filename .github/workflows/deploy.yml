@@ -17,10 +17,6 @@ jobs:
       run : |
             ls -la
 
-    - name: Test SSH connection and permissions
-      run: |
-            ssh -o StrictHostKeyChecking=no -i ${{ secrets.EC2_PRIVATE_KEY }} ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} "ls -la /var/www/html && echo 'SSH connection successful'"
-
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
