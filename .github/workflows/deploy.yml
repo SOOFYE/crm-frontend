@@ -38,7 +38,7 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_PRIVATE_KEY }}
         port: 22
-        source: "crm-frontend/build/*"
+        source: "build/*"
         target: "/var/www/html/crm-frontend"
 
     - name: Restart Nginx
