@@ -4,11 +4,34 @@ import { Link } from 'react-router-dom';
 import { AiOutlineMenu } from 'react-icons/ai'; // Hamburger icon for mobile
 import INNOAXIS from '../assets/INNOAXIS.png'
 
+import { FiLogOut } from 'react-icons/fi'; // Import the logout icon
+import { useCookies } from 'react-cookie'; // To manage cookies for token
+import { useNavigate } from 'react-router-dom'; // For navigation
+import { toast } from 'react-toastify';
+
 
 const Sidebar = () => {
-  const { user } = useContext(AuthContext); // Get user info from context
+  const { logout, user } = useContext(AuthContext); // Get user info from context
   const role = user.role; // Extract user role (admin/agent)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false); // Sidebar toggle for mobile screens
+  const [cookies, setCookie, removeCookie] = useCookies(['token']); // Manage cookies
+  const navigate = useNavigate(); // Use navigate to redirect the user
+
+  
+
+  const handleLogout = () => {
+    // Remove the token cookie to logout
+    removeCookie('token', { path: '/' });
+    
+    // Redirect to login page
+    navigate('/login');
+
+    logout()
+
+    // Optional: Display a toast or message to indicate successful logout
+    toast.success('Successfully logged out!');
+  };
+
 
   // Admin menu items
   const adminItems = [
@@ -37,11 +60,11 @@ const Sidebar = () => {
     <div className="flex min-h-screen flex-col justify-between border-e bg-white">
       {/* Sidebar Top */}
       <div className="px-4 py-6">
-      <span className="grid h-10 w-32 place-content-center rounded-lg text-xs text-gray-600 transform transition-transform duration-300 hover:scale-110">
+      <span className="grid  h-10 w-32 place-content-center rounded-lg text-xs text-gray-600 transform transition-transform duration-300 hover:scale-110">
   <img src={INNOAXIS} alt="Logo"/>
-</span>
+    </span>
 
-        <ul className="mt-6 space-y-1">
+        <ul className="mt-10 space-y-1">
           {items.map((item, index) => (
             <li key={index}>
               <Link
@@ -155,21 +178,18 @@ const Sidebar = () => {
       </div>
 
       {/* Sidebar Bottom - User Profile */}
-      <div className="sticky inset-x-0 bottom-0 border-t border-gray-100">
-        <a href="#" className="flex items-center gap-2 bg-white p-4 hover:bg-gray-50">
-          <img
-            alt=""
-            src="https://images.unsplash.com/photo-1600486913747-55e5470d6f40?ixlib=rb-1.2.1&ixid=MnwxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8&auto=format&fit=crop&w=1770&q=80"
-            className="h-10 w-10 rounded-full object-cover"
-          />
-
+      <div className="sticky inset-x-0 bottom-0 border-t border-gray-100 hover:text-red-500">
+        <div
+          className="flex items-center gap-2 bg-white p-4 hover:bg-gray-50 cursor-pointer "
+          onClick={handleLogout} // Call the logout function on click
+        >
+          <FiLogOut className="h-6 w-6 text-gray-700 " /> {/* Logout Icon */}
           <div>
             <p className="text-xs">
-              <strong className="block font-medium">{user.name}</strong>
-              <span>{user.email}</span>
+              <strong className="block font-medium">Logout</strong>
             </p>
           </div>
-        </a>
+        </div>
       </div>
     </div>
   );

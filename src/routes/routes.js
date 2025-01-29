@@ -27,6 +27,9 @@ import AttendanceDashboard from '../pages/Attendance-Agent/AttendanceDashboard';
 import ViewAttendanceLogsAdmin from '../pages/Attendance-Admin/ViewAttendanceLogsAdmin';
 import AdminDashboardMetrics from '../pages/Dashboard-Admin/AdminDashboardMetrics';
 import AdminMainDashBoard from '../pages/Dashboard-Admin/AdminMainDashBoard';
+import AddUsers from '../pages/Users/AddUsers';
+import SingleViewUser from '../pages/Users/SingleViewUser';
+import EditUsers from '../pages/Users/EditUsers';
 
 function App() {
   return (
@@ -42,6 +45,9 @@ function App() {
           }
         >
           <Route path="admin/view-users" element={<ViewUsers />} />
+          <Route path="admin/add-users" element={<AddUsers />} />
+          <Route path="admin/view-single-user/:userId" element={<SingleViewUser />} />
+          <Route path="admin/edit-user/:userId" element={<EditUsers />} />
 
           <Route path="admin/view-campaign-types" element={<ViewCampaignTypes/>}/>
           <Route path="admin/create-campaign-types" element={<CreateCampaignTypes/>}/>

@@ -3,6 +3,7 @@ import DataTable from 'react-data-table-component';
 import { fetchUsers } from '../../services/usersService';
 import { useNavigate } from 'react-router-dom';
 import { TABLEcustomStyles } from '../../styles/table-styles';
+import DropDown from '../../components/DropDownComp'; // Import the DropDown component
 
 const ViewUsers = () => {
   const [users, setUsers] = useState([]);
@@ -28,10 +29,10 @@ const ViewUsers = () => {
         searchKey,
         orderBy: sortField,
         orderDirection: sortDirection.toUpperCase(),
-        searchField: ['firstname','lastname','username','phoneNumber'],
-        filters:{
+        searchField: ['firstname', 'lastname', 'username', 'phoneNumber'],
+        filters: {
           role: 'agent',
-        }
+        },
       });
       setUsers(data.data);
       setTotalRows(data.total);
@@ -55,15 +56,40 @@ const ViewUsers = () => {
     setSortDirection(sortDirection);
   };
 
+  // Dropdown actions
+  const handleView = (row) => {
+    navigate(`/admin/view-single-user/${row.id}`);
+  };
+
+  const handleEdit = (row) => {
+    navigate(`/admin/edit-user/${row.id}`);
+  };
+
+  const dropdownOptions = [
+    { label: 'View', onClick: handleView },
+    { label: 'Edit', onClick: handleEdit },
+  ];
+
   const columns = [
     { name: 'First Name', backend: 'firstname', selector: row => row.firstname, sortable: true },
     { name: 'Last Name', backend: 'lastname', selector: row => row.lastname, sortable: true },
     { name: 'Username', backend: 'username', selector: row => row.username, sortable: true },
     { name: 'Email', backend: 'email', selector: row => row.email, sortable: true },
     { name: 'Phone Number', backend: 'phoneNumber', selector: row => row.phoneNumber, sortable: true },
-    { name: 'Password', backend: 'password', selector: row => row.password, sortable: true },
-    { name: 'Role', backend: 'role', selector: row => row.role, sortable: true },
-    
+
+    // Actions column
+    {
+      name: 'Actions',
+      cell: row => (
+        <DropDown 
+          options={dropdownOptions}
+          row={row}
+        />
+      ),
+      ignoreRowClick: true,
+      allowOverflow: true,
+      button: true,
+    },
   ];
 
   return (
@@ -78,28 +104,28 @@ const ViewUsers = () => {
           className="border border-gray-300 p-2 rounded w-1/2"
         />
         <button
-          onClick={() => navigate('/add-agent')} // Navigate to the add agent page
+          onClick={() => navigate('/admin/add-users')} // Navigate to the add user page
           className="bg-blue-500 text-white p-2 rounded"
         >
-          Add Agents
+          Add Users
         </button>
       </div>
       <div className="overflow-x-auto">
-      <DataTable
-        columns={columns}
-        data={users}
-        progressPending={loading}
-        pagination
-        paginationServer
-        paginationTotalRows={totalRows}
-        onChangePage={handlePageChange}
-        onChangeRowsPerPage={handlePerRowsChange}
-        sortServer
-        onSort={handleSort}
-        highlightOnHover
-        pointerOnHover
-        customStyles={TABLEcustomStyles}
-      />
+        <DataTable
+          columns={columns}
+          data={users}
+          progressPending={loading}
+          pagination
+          paginationServer
+          paginationTotalRows={totalRows}
+          onChangePage={handlePageChange}
+          onChangeRowsPerPage={handlePerRowsChange}
+          sortServer
+          onSort={handleSort}
+          highlightOnHover
+          pointerOnHover
+          customStyles={TABLEcustomStyles}
+        />
       </div>
     </div>
   );

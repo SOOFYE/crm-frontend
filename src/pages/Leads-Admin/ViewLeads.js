@@ -18,6 +18,9 @@ import DropDown from '../../components/DropDownComp';
 
 import { toast } from 'react-toastify';
 
+import GenerateReportModal from './GenerateReportModal'; // Adjust the path as needed
+
+
 const ViewLeads = () => {
   const [data, setData] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -43,6 +46,9 @@ const ViewLeads = () => {
   const [dateRange, setDateRange] = useState([null, null]); // State for date range
   const [startDate, endDate] = dateRange;
   const navigate = useNavigate();
+
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
 
   // Load leads with filtering and sorting
   const loadLeads = async () => {
@@ -129,7 +135,7 @@ const ViewLeads = () => {
   }
 
   const handleEdit = (row)=>{
-    navigate(`/admin/view-lead/${row.id}`)
+    navigate(`/admin/edit-lead/${row.id}`)
   }
 
   const handleStatusChange = async (leadId, newStatus) => {
@@ -176,14 +182,35 @@ const ViewLeads = () => {
 
   const handleCopyFormData = (rows) => {
     const formattedData = rows
-      .map(row => Object.keys(row.formData).map(key => row.formData[key]).join('\t'))
-      .join('\n'); // Separate rows with new line
-      
+      .map(row => {
+        // Process each formData field
+        return Object.keys(row.formData).map(key => {
+          const fieldData = row.formData[key];
+  
+          // Handle checkbox/radio with selectedOptions and Other
+          if (typeof fieldData === 'object' && fieldData !== null) {
+            const { selectedOptions = [], Other } = fieldData;
+            // Combine selectedOptions into a comma-separated string
+            const values = [...selectedOptions.filter(opt => opt !== 'Other')]; // Exclude "Other" from selectedOptions
+            
+            // If Other exists, add it to the values
+            if (Other && Other.trim()) {
+              values.push(Other);
+            }
+            return values.join(', '); // Return the comma-separated values
+          }
+  
+          // For non-object fields (text, etc.), just return the value
+          return fieldData || ''; 
+        }).join('\t'); // Use tab (\t) to separate each field for new cells in CSV format
+      })
+      .join('\n'); // Separate rows with a new line
+  
     navigator.clipboard.writeText(formattedData)
       .then(() => toast.success('Form data for selected rows copied to clipboard!'))
       .catch(err => toast.error('Failed to copy form data'));
   };
-
+  
   const dropdownOptions = [
     { label: 'View', onClick: handleView },
     { label: 'Edit', onClick: handleEdit },
@@ -234,6 +261,22 @@ const ViewLeads = () => {
   return (
     <div className="p-8">
       <h1 className="text-2xl font-bold mb-4">View Leads</h1>
+
+
+      <button
+  onClick={() => setIsModalOpen(true)}
+  className="bg-green-500 text-white py-2 px-4 rounded mb-4"
+>
+  Generate Report
+</button>
+
+<GenerateReportModal
+  isOpen={isModalOpen}
+  onRequestClose={() => setIsModalOpen(false)}
+  campaignOptions={campaignOptions} // Pass the available campaigns
+/>
+
+
       
       {/* Filters */}
       <div className="md:flex sm:grid sm:grid-cols-1 sm:gap-3 justify-between mb-4">

@@ -106,4 +106,26 @@ export const fetchLeads = async (filters) => {
       console.error('Error updating lead status:', error);
       throw error; // Handle errors as needed
     }
+
+
   };
+
+
+  export const generateReport = async ({ campaignId, startDate, endDate, recipientEmail }) => {
+    const token = getCookie('token'); // Assuming token-based authentication
+  
+    const headers = {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  
+    const API_URL = `${process.env.REACT_APP_BACKEND_URL}leads/export-to-excel`;
+  
+    const response = await axios.get(API_URL, {
+      headers,
+      params: { campaignId, startDate, endDate, recipientEmail },
+    });
+  
+    return response.data;
+  };
+  

@@ -1,0 +1,48 @@
+name: Deploy React to EC2
+
+on:
+  push:
+    branches:
+      - master  # Deploy when code is pushed to the master branch
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v3
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 20
+
+    - name: Install dependencies
+      run: |
+        cd crm-frontend
+        npm install
+
+    - name: Build React application
+      run: |
+        cd crm-frontend
+        npm run build  # Creates a production build in 'crm-frontend/build/'
+
+    - name: Deploy build folder to EC2 via SCP
+      uses: appleboy/scp-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        port: 22
+        source: "crm-frontend/build/*"
+        target: "/var/www/html/crm-frontend"
+
+    - name: Restart Nginx
+      uses: appleboy/ssh-action@master
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_PRIVATE_KEY }}
+        port: 22
+        script: sudo systemctl restart nginx

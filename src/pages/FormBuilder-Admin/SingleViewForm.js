@@ -13,8 +13,10 @@ const SingleViewForm = () => {
 
   useEffect(() => {
     loadForm();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formId]);
 
+  // Fetch the form data based on formId
   const loadForm = async () => {
     setLoading(true);
     try {
@@ -31,12 +33,26 @@ const SingleViewForm = () => {
     }
   };
 
+  // Function to render individual form fields based on their type
   const renderField = (field) => {
     switch (field.type) {
       case 'text':
-        return <input type="text" placeholder={"Enter text here"} className="w-full border px-3 py-2 rounded" disabled />;
+        return (
+          <input
+            type="text"
+            placeholder="Enter text here"
+            className="w-full border px-3 py-2 rounded"
+            disabled
+          />
+        );
       case 'textarea':
-        return <textarea placeholder={"Enter text here"} className="w-full border px-3 py-2 rounded" disabled></textarea>;
+        return (
+          <textarea
+            placeholder="Enter text here"
+            className="w-full border px-3 py-2 rounded"
+            disabled
+          ></textarea>
+        );
       case 'select':
         return (
           <select className="w-full border px-3 py-2 rounded" disabled>
@@ -48,47 +64,92 @@ const SingleViewForm = () => {
           </select>
         );
       case 'radio':
-        return field.options.map((option, idx) => (
-          <label key={idx} className="block">
-            <input type="radio" name={field.label} value={option} disabled className="mr-2" />
-            {option}
-          </label>
-        ));
+        return (
+          <div>
+            {field.options.map((option, idx) => (
+              <label key={idx} className="block mb-2">
+                <input
+                  type="radio"
+                  name={`field_${field.label}`}
+                  value={option}
+                  disabled
+                  className="mr-2"
+                />
+                {option}
+                {option.toLowerCase() === 'other' && (
+                  <input
+                    type="text"
+                    placeholder="Please specify"
+                    className="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                    disabled
+                  />
+                )}
+              </label>
+            ))}
+          </div>
+        );
       case 'checkbox':
-        return field.options.map((option, idx) => (
-          <label key={idx} className="block">
-            <input type="checkbox" name={field.label} value={option} disabled className="mr-2" />
-            {option}
-          </label>
-        ));
+        return (
+          <div>
+            {field.options.map((option, idx) => (
+              <label key={idx} className="block mb-2">
+                <input
+                  type="checkbox"
+                  name={`field_${field.label}`}
+                  value={option}
+                  disabled
+                  className="mr-2"
+                />
+                {option}
+                {option.toLowerCase() === 'other' && (
+                  <input
+                    type="text"
+                    placeholder="Please specify"
+                    className="mt-2 block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm"
+                    disabled
+                  />
+                )}
+              </label>
+            ))}
+          </div>
+        );
       case 'file':
-        return <input type="file" disabled className="w-full px-3 py-2 border rounded" />;
+        return (
+          <input
+            type="file"
+            className="w-full px-3 py-2 border rounded"
+            disabled
+          />
+        );
       default:
         return null;
     }
   };
 
+  // Function to render the list of products and their prices
   const renderProductsAndPrices = (products) => {
     if (products.length === 0) {
       return <p className="text-gray-500">No products/services added.</p>;
     }
     return products.map((product, index) => (
       <div key={index} className="flex justify-between items-center border-b pb-2">
-        <p>{product.name}</p>
-        <p>${product.price}</p>
+        <p className="text-gray-700">{product.name}</p>
+        <p className="text-gray-700">${product.price}</p>
       </div>
     ));
   };
 
+  // Handle loading and error states
   if (loading) return <div className="text-center">Loading...</div>;
   if (error) return <div className="text-center text-red-500">{error}</div>;
 
   return (
     <div className="max-w-4xl mx-auto p-6">
+      {/* Header with Form Title and Edit Button */}
       <div className="flex justify-between items-center mb-6">
         <h2 className="text-3xl font-bold">Form Preview</h2>
         <button
-          onClick={() => navigate(`/admin/edit-form/${form.id}`)} // Assuming you have an edit route
+          onClick={() => navigate(`/admin/edit-form/${form.id}`)} // Navigate to edit form page
           className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
         >
           Edit
@@ -97,23 +158,23 @@ const SingleViewForm = () => {
 
       {form && (
         <div className="grid grid-cols-1 gap-6">
-          {/* Form Name */}
-          <div className="bg-white shadow-md rounded-lg p-4">
-            <h3 className="text-lg font-semibold">Form Name</h3>
+          {/* Form Name Section */}
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h3 className="text-xl font-semibold mb-2">Form Name</h3>
             <p className="text-gray-700">{form.name}</p>
           </div>
 
-          {/* Products and Services */}
-          <div className="bg-white shadow-md rounded-lg p-4">
-            <h3 className="text-lg font-semibold">Products/Services</h3>
+          {/* Products and Services Section */}
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h3 className="text-xl font-semibold mb-2">Products/Services</h3>
             {renderProductsAndPrices(form.productsAndPrices || [])}
           </div>
 
-          {/* Form Fields */}
-          <div className="bg-white shadow-md rounded-lg p-4">
-            <h3 className="text-lg font-semibold">Form Fields</h3>
+          {/* Form Fields Section */}
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h3 className="text-xl font-semibold mb-4">Form Fields</h3>
             {form.fields && form.fields.length > 0 ? (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {form.fields.map((field, index) => (
                   <div key={index} className="border-b pb-4">
                     <p className="text-gray-600 mb-2">
@@ -128,9 +189,9 @@ const SingleViewForm = () => {
             )}
           </div>
 
-          {/* Created At */}
-          <div className="bg-white shadow-md rounded-lg p-4">
-            <h3 className="text-lg font-semibold">Created At</h3>
+          {/* Created At Section */}
+          <div className="bg-white shadow-md rounded-lg p-6">
+            <h3 className="text-xl font-semibold mb-2">Created At</h3>
             <p className="text-gray-700">{moment(form.createdAt).format('MMMM Do YYYY, h:mm:ss a')}</p>
           </div>
         </div>

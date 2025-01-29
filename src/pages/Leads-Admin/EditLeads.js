@@ -14,56 +14,101 @@ const EditLeads = () => {
   const [uploading, setUploading] = useState(false);
   const fileInputRefs = useRef({});
 
-  useEffect(() => {
-    const fetchLead = async () => {
-      try {
-        const response = await getLeadById(leadId);
-        setLead(response);
-        setFormData(response.formData);
-        setSelectedProducts(response.selectedProducts || []);
-      } catch (error) {
-        console.error('Error fetching lead:', error);
-        toast.error('Failed to load lead data');
-      }
-    };
-
-    fetchLead();
-  }, [leadId]);
-
-  const isS3Url = (url) => {
-    const regex = /s3\.[\w-]+\.amazonaws\.com/;
-    return regex.test(url);
-  };
-
-
-  const handleDownload = async (s3Url) => {
+useEffect(() => {
+  const fetchLead = async () => {
     try {
-      const response = await getSignedUrl(s3Url);
-      window.open(response, '_blank'); // Open the signed URL to initiate the download
+      const response = await getLeadById(leadId);
+      setLead(response);
+
+      // Access the nested formData and transform it
+      const transformedFormData = { ...response.formData };
+
+      response.form.fields.forEach((field) => {
+        const fieldData = transformedFormData[field.label] || null; // Ensure fieldData is an object
+
+        if (['checkbox', 'radio'].includes(field.type)) {
+          transformedFormData[field.label] = {
+            selectedOptions: Array.isArray(fieldData?.selectedOptions)
+              ? fieldData.selectedOptions
+              : [fieldData?.selectedOptions || ''].filter(Boolean),
+            Other: fieldData?.Other || '',
+          };
+
+          // If "Other" has a value, make sure "Other" is in selectedOptions
+          if (fieldData?.Other) {
+            transformedFormData[field.label].selectedOptions.push('Other');
+          }
+        } else {
+          transformedFormData[field.label] = fieldData || '';
+        }
+      });
+
+      setFormData(transformedFormData);
+      setSelectedProducts(response.selectedProducts || []);
     } catch (error) {
-      console.error('Error generating signed URL:', error);
+      console.error('Error fetching lead:', error);
+      toast.error('Failed to load lead data');
     }
   };
 
+  fetchLead();
+}, [leadId]);
 
-  const handleInputChange = (e) => {
-    const { name, value, type, checked, files: fileInput } = e.target;
 
-    if (type === 'checkbox') {
+  const handleInputChange = (e, fieldType, fieldLabel) => {
+    const { name, type, files: fileInput, value, checked } = e.target;
+
+    if (type === 'file') {
+      setFiles((prevFiles) => ({
+        ...prevFiles,
+        [name]: fileInput[0] // Assuming single file upload, handle multiple if necessary
+      }));
+    } else if (type === 'checkbox') {
+      // Checkbox logic
+      setFormData((prev) => {
+        const prevOptions = prev[name]?.selectedOptions || [];
+        let updatedOptions;
+        if (checked) {
+          updatedOptions = [...prevOptions, value];
+        } else {
+          updatedOptions = prevOptions.filter((val) => val !== value);
+        }
+        return {
+          ...prev,
+          [name]: {
+            ...prev[name],
+            selectedOptions: updatedOptions,
+            Other: prev[name]?.Other || '',
+          },
+        };
+      });
+    } else if (type === 'radio') {
+      // Radio button logic
       setFormData((prev) => ({
         ...prev,
-        [name]: prev[name] ? (checked ? [...prev[name], value] : prev[name].filter((val) => val !== value)) : [value],
+        [name]: {
+          selectedOptions: [value],
+          Other: value === 'Other' ? prev[name]?.Other || '' : '',
+        },
       }));
-    } else if (type === 'radio') {
+    } else {
+      // Text, textarea
       setFormData((prev) => ({
         ...prev,
         [name]: value,
       }));
-    } else if (type === 'file') {
-      setFiles((prevFiles) => ({ ...prevFiles, [name]: fileInput[0] }));
-    } else {
-      setFormData((prev) => ({ ...prev, [name]: value }));
     }
+  };
+
+  const handleOtherInputChange = (e, fieldLabel) => {
+    const { value } = e.target;
+    setFormData((prev) => ({
+      ...prev,
+      [fieldLabel]: {
+        ...prev[fieldLabel],
+        Other: value,
+      },
+    }));
   };
 
   const handleProductChange = (e) => {
@@ -81,36 +126,92 @@ const EditLeads = () => {
       delete updatedFiles[fieldLabel];
       return updatedFiles;
     });
-    fileInputRefs.current[fieldLabel].value = ''; // Clear the file input field
+    if (fileInputRefs.current[fieldLabel]) {
+      fileInputRefs.current[fieldLabel].value = ''; // Clear the file input field
+    }
+  };
+
+  // Recursive function to build FormData from nested objects
+  const buildFormData = (formData, data, parentKey) => {
+    if (data && typeof data === 'object' && !(data instanceof File)) {
+      if (Array.isArray(data)) {
+        data.forEach((value, index) => {
+          buildFormData(formData, value, `${parentKey}[${index}]`);
+        });
+      } else {
+        Object.keys(data).forEach((key) => {
+          buildFormData(formData, data[key], parentKey ? `${parentKey}[${key}]` : key);
+        });
+      }
+    } else {
+      const value = data == null ? '' : data;
+      formData.append(parentKey, value);
+    }
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setUploading(true);
 
-    const leadData = new FormData();
-    //leadData.append('leadId', leadId);
-
-    // Add form data
-    Object.keys(formData).forEach((key) => {
-      if (Array.isArray(formData[key])) {
-        formData[key].forEach((val) => leadData.append(`${key}[]`, val));
-      } else {
-        leadData.append(key, formData[key]);
-      }
-    });
-
-    // Add selected products
-    selectedProducts.forEach((product) => leadData.append('selectedProducts[]', product));
-
-    // Append files
-    Object.keys(files).forEach((key) => {
-      if (files[key]) {
-        leadData.append(key, files[key]);
-      }
-    });
-
     try {
+      // Validate "Other" inputs
+      for (let field of lead.form.fields) {
+        if (['checkbox', 'radio'].includes(field.type) && field.options.includes('Other')) {
+          const fieldData = formData[field.label];
+          if (
+            fieldData &&
+            Array.isArray(fieldData.selectedOptions) &&
+            fieldData.selectedOptions.includes('Other') &&
+            (!fieldData.Other || fieldData.Other.trim() === '')
+          ) {
+            toast.error(`Please specify the "${field.label}" in the "Other" option.`);
+            setUploading(false);
+            return;
+          }
+        }
+      }
+
+      // Validate selected products
+      if (selectedProducts.length === 0) {
+        toast.error('Please select at least one product/service.');
+        setUploading(false);
+        return;
+      }
+
+      // Structure formData in the desired nested format
+      const structuredFormData = {};
+
+      lead.form.fields.forEach((field) => {
+        if (['checkbox', 'radio'].includes(field.type)) {
+          const fieldData = formData[field.label];
+          structuredFormData[field.label] = {
+            selectedOptions: fieldData?.selectedOptions && fieldData?.selectedOptions!=='Other' ? fieldData.selectedOptions : [],
+            Other: fieldData?.Other || '',
+          };
+        } else {
+          structuredFormData[field.label] = formData[field.label] || '';
+        }
+      });
+
+      // Create FormData and build it recursively
+      const leadData = new FormData();
+      buildFormData(leadData, structuredFormData); 
+
+      // Add selected products
+      selectedProducts.forEach((product) => leadData.append('selectedProducts[]', product));
+
+      // Append files
+      Object.keys(files).forEach((key) => {
+        if (files[key]) {
+          leadData.append(key, files[key]);
+        }
+      });
+
+      console.log([...leadData])
+
+      // return
+
+      // Submit the form data and files
       await updateLead(leadId, leadData);
       toast.success('Lead updated successfully!');
       navigate(`/admin/view-lead/${leadId}`);
@@ -126,22 +227,22 @@ const EditLeads = () => {
     <div>
       {currentFileUrl && !files[fieldLabel] && (
         <p>
-          {isS3Url(currentFileUrl) ? (
-            <a onClick={() => handleDownload(currentFileUrl)} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-              View Current File
-            </a>
-          ) : (
-            <a href={currentFileUrl} target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">
-              View Current File
-            </a>
-          )}
+          <a
+            href={currentFileUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-500 underline"
+          >
+            View Current File
+          </a>
         </p>
       )}
       <input
         ref={(ref) => (fileInputRefs.current[fieldLabel] = ref)}
         type="file"
         name={fieldLabel}
-        onChange={handleInputChange}
+        onChange={(e) => handleInputChange(e, 'file', fieldLabel)}
+        className="mt-2"
       />
       {files[fieldLabel] && (
         <button
@@ -153,7 +254,9 @@ const EditLeads = () => {
         </button>
       )}
       {!files[fieldLabel] && currentFileUrl && (
-        <p className="mt-2 text-sm text-gray-500">Uploading a new file will replace the current one.</p>
+        <p className="mt-2 text-sm text-gray-500">
+          Uploading a new file will replace the current one.
+        </p>
       )}
     </div>
   );
@@ -174,7 +277,7 @@ const EditLeads = () => {
                 type="text"
                 name={field.label}
                 value={formData[field.label] || ''}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange(e, field.type, field.label)}
                 className="w-full p-2 border border-gray-300 rounded-md"
               />
             )}
@@ -182,7 +285,7 @@ const EditLeads = () => {
               <textarea
                 name={field.label}
                 value={formData[field.label] || ''}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange(e, field.type, field.label)}
                 className="w-full p-2 border border-gray-300 rounded-md"
               />
             )}
@@ -190,9 +293,10 @@ const EditLeads = () => {
               <select
                 name={field.label}
                 value={formData[field.label] || ''}
-                onChange={handleInputChange}
+                onChange={(e) => handleInputChange(e, field.type, field.label)}
                 className="w-full p-2 border border-gray-300 rounded-md"
               >
+                <option value="">Select an option</option>
                 {field.options.map((option) => (
                   <option key={option} value={option}>
                     {option}
@@ -201,34 +305,68 @@ const EditLeads = () => {
               </select>
             )}
             {field.type === 'checkbox' && (
-              field.options.map((option) => (
-                <label key={option} className="inline-flex items-center mr-4">
-                  <input
-                    type="checkbox"
-                    name={field.label}
-                    value={option}
-                    checked={formData[field.label]?.includes(option) || false}
-                    onChange={handleInputChange}
-                    className="form-checkbox"
-                  />
-                  {option}
-                </label>
-              ))
+              <div className="mt-2">
+                {field.options.map((option) => (
+                  <label key={option} className="inline-flex items-center mr-4">
+                    <input
+                      type="checkbox"
+                      name={field.label}
+                      value={option}
+                      checked={
+                        formData[field.label]?.selectedOptions
+                          ? formData[field.label].selectedOptions.includes(option)
+                          : false
+                      }
+                      onChange={(e) => handleInputChange(e, field.type, field.label)}
+                      className="form-checkbox"
+                    />
+                    <span className="ml-2">{option}</span>
+                  </label>
+                ))}
+                {formData[field.label]?.selectedOptions.includes('Other') && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder={`Specify other for ${field.label}`}
+                      value={formData[field.label].Other || ''}
+                      onChange={(e) => handleOtherInputChange(e, field.label)}
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                )}
+              </div>
             )}
             {field.type === 'radio' && (
-              field.options.map((option) => (
-                <label key={option} className="inline-flex items-center mr-4">
-                  <input
-                    type="radio"
-                    name={field.label}
-                    value={option}
-                    checked={formData[field.label] === option}
-                    onChange={handleInputChange}
-                    className="form-radio"
-                  />
-                  {option}
-                </label>
-              ))
+              <div className="mt-2">
+                {field.options.map((option) => (
+                  <label key={option} className="inline-flex items-center mr-4">
+                    <input
+                      type="radio"
+                      name={field.label}
+                      value={option}
+                      checked={
+                        formData[field.label]?.selectedOptions
+                          ? formData[field.label].selectedOptions.includes(option)
+                          : false
+                      }
+                      onChange={(e) => handleInputChange(e, field.type, field.label)}
+                      className="form-radio"
+                    />
+                    <span className="ml-2">{option}</span>
+                  </label>
+                ))}
+                {formData[field.label]?.selectedOptions.includes('Other') && (
+                  <div className="mt-2">
+                    <input
+                      type="text"
+                      placeholder={`Specify other for ${field.label}`}
+                      value={formData[field.label].Other || ''}
+                      onChange={(e) => handleOtherInputChange(e, field.label)}
+                      className="w-full p-2 border border-gray-300 rounded-md"
+                    />
+                  </div>
+                )}
+              </div>
             )}
             {field.type === 'file' && renderFileInput(field.label, formData[field.label])}
           </div>
@@ -246,7 +384,9 @@ const EditLeads = () => {
                 onChange={handleProductChange}
                 className="form-checkbox"
               />
-              <span className="ml-2">{product.name} (${product.price})</span>
+              <span className="ml-2">
+                {product.name} (${product.price})
+              </span>
             </label>
           </div>
         ))}
@@ -255,7 +395,9 @@ const EditLeads = () => {
         <div className="mt-6">
           <button
             type="submit"
-            className={`bg-blue-500 text-white px-4 py-2 rounded ${uploading ? 'opacity-50' : 'hover:bg-blue-600'}`}
+            className={`bg-blue-500 text-white px-4 py-2 rounded ${
+              uploading ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-600'
+            }`}
             disabled={uploading}
           >
             {uploading ? 'Saving...' : 'Save Changes'}
